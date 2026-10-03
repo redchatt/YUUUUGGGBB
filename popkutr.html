@@ -3,225 +3,275 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameBazar - Admin Control Panel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <title>Admin Panel - İdarəetmə Sistemi</title>
+  <style>
+    :root {
+      --bg-color: #0d0f12;
+      --card-bg: #161b22;
+      --accent-color: #ff2a2a;
+      --text-color: #ffffff;
+      --subtext: #8b949e;
+      --border-color: #30363d;
+      --green-color: #238636;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+    }
+
+    .admin-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    h2, h3 {
+      margin-bottom: 15px;
+    }
+
+    .section-box {
+      background: #0d0f12;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--subtext);
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      background: #161b22;
+      border: 1px solid var(--border-color);
+      color: white;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-green {
+      background: var(--green-color);
+    }
+
+    .card-item, .receipt-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #161b22;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .badge-active {
+      background: rgba(35, 134, 54, 0.2);
+      color: #3fb950;
+      border: 1px solid #238636;
+    }
+
+    .btn-danger {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .receipt-img {
+      max-width: 100px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="bg-black text-white font-sans p-4">
+<body>
 
-  <div id="adminAuthSection" class="max-w-md mx-auto my-12 bg-zinc-900 p-6 rounded-2xl border border-red-600">
-    <h2 class="text-2xl font-black text-red-600 mb-4 text-center">ADMIN PANEL GİRİŞİ</h2>
-    <form onsubmit="handleAdminLogin(event)" class="space-y-4">
-      <div>
-        <label class="text-xs text-zinc-400">Admin Login</label>
-        <input type="text" id="adminLogin" required class="w-full bg-zinc-800 p-3 rounded text-sm text-white border border-zinc-700">
-      </div>
-      <div>
-        <label class="text-xs text-zinc-400">Admin Şifrə</label>
-        <input type="password" id="adminPass" required class="w-full bg-zinc-800 p-3 rounded text-sm text-white border border-zinc-700">
-      </div>
-      <button type="submit" class="w-full bg-red-600 font-bold py-3 rounded hover:bg-red-700">Daxil Ol</button>
-    </form>
-  </div>
+  <div class="admin-container">
+    <h2>⚙️ Admin İdarəetmə Paneli</h2>
 
-  <div id="adminDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
-    
-    <!-- STATİSTİKA -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">İstifadəçilər</span>
-        <h3 id="statUsers" class="text-2xl font-bold text-red-500">0</h3>
+    <!-- 1. DEPOZİT KARTLARININ İDARƏ EDİLMƏSİ -->
+    <div class="section-box">
+      <h3>💳 Depozit Kartlarını İdarə Et</h3>
+      <p style="color: var(--subtext); font-size: 14px; margin-bottom: 15px;">Saytda depozit ödənişləri üçün görünəcək kartları eləvə edin və ya silin.</p>
+      
+      <div class="form-group">
+        <label>Kart Nömrəsi / Bank Adı / Rekvizit:</label>
+        <input type="text" id="card-input" placeholder="Məsələn: 4127 8888 9999 1234 (Kapital Bank)">
       </div>
-      <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">Gözləyən Elanlar</span>
-        <h3 id="statPendingListings" class="text-2xl font-bold text-yellow-500">0</h3>
-      </div>
-      <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">Dondurulmuş Əməliyyatlar</span>
-        <h3 id="statDeals" class="text-2xl font-bold text-blue-500">0</h3>
-      </div>
-      <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">Maliyyə Sorğuları</span>
-        <h3 id="statRequests" class="text-2xl font-bold text-green-500">0</h3>
-      </div>
+      <button class="btn btn-green" onclick="addCard()">+ Kart Əlavə Et</button>
+
+      <h4 style="margin-top: 20px;">Mövcud Kartlar:</h4>
+      <div id="cards-list"></div>
     </div>
 
-    <!-- ELANLARIN TƏSDİQİ -->
-    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
-      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">Gözləyən Elanlar</h2>
-      <div id="pendingListingsContainer" class="space-y-3"></div>
-    </div>
-
-    <!-- DEPOZİT VƏ ÇIXARIŞ SORĞULARI -->
-    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
-      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">Maliyyə Sorğuları (Depozit/Çıxarış)</h2>
-      <div id="financialRequestsContainer" class="space-y-3"></div>
-    </div>
-
-    <!-- İSTİFADƏÇİ İDARƏSİ VƏ MAVİ TİK -->
-    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
-      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">İstifadəçilər və Balans</h2>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-zinc-300">
-          <thead class="bg-zinc-800 uppercase">
-            <tr>
-              <th class="p-2">İstifadəçi</th>
-              <th class="p-2">Telefon</th>
-              <th class="p-2">Balans</th>
-              <th class="p-2">Dondurulub</th>
-              <th class="p-2">Mavi Tik</th>
-              <th class="p-2">Əməliyyat</th>
-            </tr>
-          </thead>
-          <tbody id="usersTableBody"></tbody>
-        </table>
+    <!-- 2. GƏLƏN ÖDƏNİŞ ÇEKLƏRİ -->
+    <div class="section-box">
+      <h3>📄 İstifadəçi Ödəniş Çekləri</h3>
+      <p style="color: var(--subtext); font-size: 14px; margin-bottom: 15px;">İstifadəçilərin depozit edərkən yüklədiyi çeklər burada görünür.</p>
+      
+      <div id="receipts-list">
+        <p style="color: var(--subtext);">Hələ ki, daxil olan ödəniş çeki yoxdur.</p>
       </div>
     </div>
-
   </div>
 
   <script>
-    const firebaseConfig = {
-      databaseURL: "https://gamebazar-8fc97-default-rtdb.asia-southeast1.firebasedatabase.app/"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    // Başlanğıc kart mətni
+    let cards = [
+      { id: 1, text: "4127 8888 9999 1234 (Kapital Bank)", active: true }
+    ];
 
-    function handleAdminLogin(e) {
-      e.preventDefault();
-      const l = document.getElementById('adminLogin').value.trim();
-      const p = document.getElementById('adminPass').value.trim();
+    // Nümunə çeklər siyahısı
+    let receipts = [];
 
-      if (l === 'GGHH321_QİJJ' && p === 'AA33390_SBFVJH') {
-        document.getElementById('adminAuthSection').classList.add('hidden');
-        document.getElementById('adminDashboard').classList.remove('hidden');
-        initAdminDashboard();
-      } else {
-        alert("Səhv login və ya şifrə!");
+    // Kartlar siyahısını ekranda göstər
+    function renderCards() {
+      const list = document.getElementById('cards-list');
+      list.innerHTML = '';
+
+      if (cards.length === 0) {
+        list.innerHTML = '<p style="color: var(--subtext); margin-top: 10px;">Aktiv kart yoxdur. Zəhmət olmasa kart əlavə edin.</p>';
+        return;
       }
-    }
 
-    function initAdminDashboard() {
-      loadPendingListings();
-      loadUsers();
-      loadFinancialRequests();
-    }
-
-    function loadPendingListings() {
-      db.ref('listings').on('value', snap => {
-        const data = snap.val();
-        const container = document.getElementById('pendingListingsContainer');
-        container.innerHTML = '';
-        let pending = 0;
-
-        if (data) {
-          Object.keys(data).forEach(id => {
-            const item = data[id];
-            if (item.status === 'PENDING') {
-              pending++;
-              const div = document.createElement('div');
-              div.className = "bg-zinc-800 p-4 rounded flex justify-between items-center";
-              div.innerHTML = `
-                <div class="flex items-center space-x-3">
-                  <img src="${item.image}" class="w-12 h-12 object-cover rounded">
-                  <div>
-                    <h4 class="font-bold text-sm text-white">${item.title} (${item.price} AZN)</h4>
-                    <p class="text-xs text-zinc-400">Satıcı: ${item.seller} | Tel: ${item.sellerPhone}</p>
-                  </div>
-                </div>
-                <div class="space-x-2">
-                  <button onclick="approveListing('${id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">Təsdiqlə</button>
-                  <button onclick="rejectListing('${id}')" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold">Sil</button>
-                </div>
-              `;
-              container.appendChild(div);
-            }
-          });
-        }
-        document.getElementById('statPendingListings').innerText = pending;
+      cards.forEach((card, index) => {
+        const item = document.createElement('div');
+        item.className = 'card-item';
+        item.innerHTML = `
+          <div>
+            <strong>💳 ${card.text}</strong>
+            ${card.active ? '<span class="badge badge-active" style="margin-left: 8px;">Əsas Kart</span>' : ''}
+          </div>
+          <div>
+            ${!card.active ? `<button class="btn" style="background:#30363d; margin-right:5px; font-size:12px;" onclick="setActiveCard(${index})">Əsas Et</button>` : ''}
+            <button class="btn-danger" onclick="deleteCard(${index})">Sil</button>
+          </div>
+        `;
+        list.appendChild(item);
       });
     }
 
-    function approveListing(id) { db.ref('listings/' + id).update({ status: 'APPROVED' }); }
-    function rejectListing(id) { db.ref('listings/' + id).remove(); }
+    // Yeni Kart Əlavə Et
+    function addCard() {
+      const input = document.getElementById('card-input');
+      const val = input.value.trim();
 
-    function loadUsers() {
-      db.ref('users').on('value', snap => {
-        const users = snap.val();
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '';
-        let count = 0;
+      if (val === '') {
+        alert('Lütfən kart məlumatını daxil edin!');
+        return;
+      }
 
-        if (users) {
-          count = Object.keys(users).length;
-          Object.keys(users).forEach(uName => {
-            const u = users[uName];
-            const tr = document.createElement('tr');
-            tr.className = "border-b border-zinc-800";
-            tr.innerHTML = `
-              <td class="p-2 font-bold">${u.username}</td>
-              <td class="p-2">${u.phone}</td>
-              <td class="p-2 text-green-400 font-bold">${(u.balance || 0).toFixed(2)} AZN</td>
-              <td class="p-2 text-yellow-500 font-bold">${(u.heldBalance || 0).toFixed(2)} AZN</td>
-              <td class="p-2">${u.isVerified ? '<span class="text-blue-500"><i class="fa-solid fa-circle-check"></i> Var</span>' : 'Yoxdur'}</td>
-              <td class="p-2">
-                <button onclick="toggleVerify('${u.username}', ${!u.isVerified})" class="bg-blue-600 px-2 py-1 rounded text-xs">
-                  ${u.isVerified ? 'Mavi Tik Ləğv Et' : 'Mavi Tik Ver'}
-                </button>
-              </td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
-        document.getElementById('statUsers').innerText = count;
+      const isFirst = cards.length === 0;
+      cards.push({ id: Date.now(), text: val, active: isFirst });
+      input.value = '';
+      renderCards();
+    }
+
+    // Kartı Sil
+    function deleteCard(index) {
+      const wasActive = cards[index].active;
+      cards.splice(index, 1);
+      
+      // Silinən kart əsas kart idisə, birincini əsas et
+      if (wasActive && cards.length > 0) {
+        cards[0].active = true;
+      }
+      renderCards();
+    }
+
+    // Seçilən kartı əsas depozit kartı et
+    function setActiveCard(index) {
+      cards.forEach(c => c.active = false);
+      cards[index].active = true;
+      renderCards();
+    }
+
+    // Çekləri göstər
+    function renderReceipts() {
+      const list = document.getElementById('receipts-list');
+      if (receipts.length === 0) {
+        list.innerHTML = '<p style="color: var(--subtext);">Hələ ki, daxil olan ödəniş çeki yoxdur.</p>';
+        return;
+      }
+
+      list.innerHTML = '';
+      receipts.forEach((r, i) => {
+        const item = document.createElement('div');
+        item.className = 'receipt-item';
+        item.innerHTML = `
+          <div>
+            <p><strong>İstifadəçi:</strong> ${r.user}</p>
+            <p><strong>Məbləğ:</strong> ${r.amount} AZN</p>
+            <p style="color: var(--subtext); font-size:12px;">Saat: ${r.time}</p>
+          </div>
+          <div>
+            <button class="btn btn-green" style="font-size:12px; margin-right:5px;" onclick="approveReceipt(${i})">Təsdiqlə</button>
+            <button class="btn-danger" style="font-size:12px;" onclick="rejectReceipt(${i})">Rədd Et</button>
+          </div>
+        `;
+        list.appendChild(item);
       });
     }
 
-    function toggleVerify(username, status) { db.ref('users/' + username).update({ isVerified: status }); }
-
-    function loadFinancialRequests() {
-      db.ref('requests').on('value', snap => {
-        const data = snap.val();
-        const container = document.getElementById('financialRequestsContainer');
-        container.innerHTML = '';
-        let reqCount = 0;
-
-        if (data) {
-          Object.keys(data).forEach(id => {
-            const r = data[id];
-            if (r.status === 'PENDING') {
-              reqCount++;
-              const div = document.createElement('div');
-              div.className = "bg-zinc-800 p-3 rounded flex justify-between items-center text-xs";
-              div.innerHTML = `
-                <div>
-                  <span class="font-bold text-red-500">${r.type}</span> - <strong>${r.username}</strong>
-                  <p class="text-zinc-300">Məbləğ: ${r.amount} AZN | Qeyd/Kart: ${r.note || r.card}</p>
-                </div>
-                <button onclick="approveRequest('${id}', '${r.username}', '${r.type}', ${r.amount})" class="bg-green-600 px-3 py-1.5 rounded font-bold">İcra Et</button>
-              `;
-              container.appendChild(div);
-            }
-          });
-        }
-        document.getElementById('statRequests').innerText = reqCount;
-      });
+    function approveReceipt(index) {
+      alert('Ödəniş təsdiqləndi və balans artırıldı!');
+      receipts.splice(index, 1);
+      renderReceipts();
     }
 
-    function approveRequest(reqId, username, type, amount) {
-      db.ref('users/' + username).once('value', snap => {
-        const u = snap.val();
-        let newBal = u.balance || 0;
-
-        if (type === 'DEPOSIT') newBal += amount;
-        if (type === 'WITHDRAW') newBal -= amount;
-
-        db.ref('users/' + username).update({ balance: newBal });
-        db.ref('requests/' + reqId).update({ status: 'APPROVED' });
-      });
+    function rejectReceipt(index) {
+      alert('Ödəniş çeki rədd edildi.');
+      receipts.splice(index, 1);
+      renderReceipts();
     }
+
+    // Səhifə yüklənəndə kartları göstər
+    renderCards();
   </script>
 </body>
 </html>
