@@ -3,36 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameBazar - Oyun Hesabı Alqı-Satqısı</title>
-  <!-- Tailwind CSS & FontAwesome Icons -->
+  <title>GameBazar - VIP Oyun Bazarı</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
-    body { background-color: #0b0b0c; color: #f3f4f6; font-family: 'Inter', sans-serif; }
+    body { background-color: #08080a; color: #f3f4f6; font-family: 'Inter', sans-serif; }
     .bg-red-main { background-color: #e50914; }
     .bg-red-hover:hover { background-color: #b80710; }
     .border-red-main { border-color: #e50914; }
     .text-red-main { color: #e50914; }
-    .glass-card { background: rgba(22, 22, 26, 0.95); border: 1px solid rgba(229, 9, 20, 0.2); }
-    /* Modal / Custom Alert Alerting */
-    .custom-toast { position: fixed; bottom: 20px; right: 20px; z-index: 9999; animation: slideIn 0.3s forwards; }
+    .glass-card { background: rgba(18, 18, 22, 0.95); border: 1px solid rgba(229, 9, 20, 0.25); }
+    .auth-bg {
+      background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(0, 0, 0, 0.95) 60%),
+                  radial-gradient(circle at top right, rgba(229, 9, 20, 0.3), transparent 70%);
+    }
+    .active-nav-btn { background-color: #e50914 !important; color: #ffffff !important; box-shadow: 0 0 15px rgba(229, 9, 20, 0.6); }
+    .custom-toast { position: fixed; bottom: 80px; right: 20px; z-index: 9999; animation: slideIn 0.3s forwards; }
     @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 </head>
-<body class="pb-20">
+<body class="pb-24">
 
-  <!-- TOP HEADER -->
-  <header class="sticky top-0 z-40 bg-black/90 backdrop-blur border-b border-red-500/30 px-4 py-3 flex justify-between items-center">
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-black/95 backdrop-blur border-b border-red-600/30 px-4 py-3 flex justify-between items-center">
     <div class="flex items-center space-x-2">
-      <span class="text-2xl font-black tracking-wider text-red-main uppercase"><i class="fa-solid font-bold fa-gamepad mr-1"></i>GameBazar</span>
+      <span class="text-2xl font-black tracking-wider text-red-main uppercase cursor-pointer" onclick="showTab('listings')">
+        <i class="fa-solid fa-gamepad mr-1"></i>GameBazar
+      </span>
     </div>
     <div id="headerUserBlock" class="flex items-center space-x-3 hidden">
       <div class="bg-zinc-900 border border-red-500/40 rounded-full px-3 py-1 flex items-center space-x-2">
         <i class="fa-solid fa-wallet text-red-main"></i>
-        <span id="userBalanceDisplay" class="font-bold text-sm text-green-400">0.00 AZN</span>
+        <div class="text-xs">
+          <span id="userBalanceDisplay" class="font-bold text-green-400">0.00 AZN</span>
+          <span id="userHeldDisplay" class="text-yellow-500 text-[10px] block">(0.00 AZN Dondurulub)</span>
+        </div>
       </div>
       <div class="flex items-center space-x-1">
         <span id="headerUsername" class="font-semibold text-sm"></span>
@@ -42,50 +49,24 @@
     </div>
   </header>
 
-  <!-- NOTIFICATION CONTAINER (Sayta məxsus bildiriş sistemi) -->
   <div id="toastContainer"></div>
 
-  <!-- AUTH CONTAINER (Giriş / Qeydiyyat) -->
-  <section id="authSection" class="max-w-md mx-auto my-8 p-4">
-    <div class="glass-card rounded-2xl p-6 shadow-2xl">
-      <!-- Tabs -->
+  <!-- AUTH SECTION (GİRİŞ / QEYDİYYAT) -->
+  <section id="authSection" class="max-w-xl mx-auto my-6 p-4">
+    <div class="glass-card auth-bg rounded-3xl p-6 sm:p-8 shadow-2xl border border-red-600/40">
+      
       <div class="flex border-b border-zinc-800 mb-6">
-        <button id="loginTabBtn" onclick="switchAuthTab('login')" class="w-1/2 py-2 font-bold text-red-main border-b-2 border-red-main">Giriş</button>
-        <button id="registerTabBtn" onclick="switchAuthTab('register')" class="w-1/2 py-2 font-bold text-zinc-400">Qeydiyyat</button>
+        <button id="loginTabBtn" onclick="switchAuthTab('login')" class="w-1/2 py-3 font-bold text-red-main border-b-2 border-red-main text-lg">Giriş</button>
+        <button id="registerTabBtn" onclick="switchAuthTab('register')" class="w-1/2 py-3 font-bold text-zinc-400 text-lg">Qeydiyyat</button>
       </div>
 
       <!-- Giriş Formu -->
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-zinc-400 mb-1">İstifadəçi Adı və ya Nömrə</label>
-          <input type="text" id="loginIdentifier" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="İstifadəçi adı və ya 0501234567">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şifrə</label>
-          <div class="relative">
-            <input type="password" id="loginPassword" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10" placeholder="******">
-            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute right-3 top-3 text-zinc-400">
-              <i id="loginEyeIcon" class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-        </div>
-        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg shadow-lg">Daxil Ol</button>
-      </form>
-
-      <!-- Qeydiyyat Formu -->
-      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
-        <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Ad və Soyad</label>
-          <input type="text" id="regFullName" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="Əli Əliyev">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">İstifadəçi Adı</label>
-          <input type="text" id="regUsername" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="ali_gamer">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mobil Nömrə</label>
           <div class="flex space-x-2">
-            <select id="regPrefix" class="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-red-main">
+            <select id="loginPrefix" class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-main">
+              <option value="">İst. Adı</option>
               <option value="050">050</option>
               <option value="051">051</option>
               <option value="055">055</option>
@@ -94,147 +75,220 @@
               <option value="010">010</option>
               <option value="099">099</option>
             </select>
-            <input type="text" id="regPhone" maxlength="7" required oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="1234567">
+            <input type="text" id="loginIdentifier" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white">
           </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-zinc-400 mb-1">Şifrə</label>
           <div class="relative">
-            <input type="password" id="regPassword" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10" placeholder="******">
-            <button type="button" onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')" class="absolute right-3 top-3 text-zinc-400">
+            <input type="password" id="loginPassword" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10">
+            <button type="button" onclick="togglePassword('loginPassword', 'loginEyeIcon')" class="absolute right-3 top-3.5 text-zinc-400">
+              <i id="loginEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3.5 rounded-xl shadow-lg transition">Daxil Ol</button>
+      </form>
+
+      <!-- Qeydiyyat Formu -->
+      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Ad və Soyad</label>
+          <input type="text" id="regFullName" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">İstifadəçi Adı</label>
+          <input type="text" id="regUsername" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mobil Nömrə</label>
+          <div class="flex space-x-2">
+            <select id="regPrefix" class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-main">
+              <option value="050">050</option>
+              <option value="051">051</option>
+              <option value="055">055</option>
+              <option value="070">070</option>
+              <option value="077">077</option>
+              <option value="010">010</option>
+              <option value="099">099</option>
+            </select>
+            <input type="text" id="regPhone" required oninput="formatPhoneNumber(this)" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şifrə</label>
+          <div class="relative">
+            <input type="password" id="regPassword" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10">
+            <button type="button" onclick="togglePassword('regPassword', 'regEyeIcon')" class="absolute right-3 top-3.5 text-zinc-400">
               <i id="regEyeIcon" class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
-        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg shadow-lg">Qeydiyyatdan Keç</button>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şifrə Təsdiqi</label>
+          <div class="relative">
+            <input type="password" id="regPasswordConfirm" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10">
+            <button type="button" onclick="togglePassword('regPasswordConfirm', 'regConfirmEyeIcon')" class="absolute right-3 top-3.5 text-zinc-400">
+              <i id="regConfirmEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3.5 rounded-xl shadow-lg transition">Qeydiyyatı Tamamla</button>
       </form>
+
+      <!-- GİRİŞ/QEYDİYYAT ALTINDAKİ ƏTRAFLI MƏLUMAT BLOQLARI -->
+      <div class="mt-8 border-t border-zinc-800/80 pt-6 space-y-4 text-xs text-zinc-400">
+        <div class="flex items-start space-x-3">
+          <i class="fa-solid fa-shield-halved text-red-main text-xl mt-1"></i>
+          <div>
+            <h4 class="font-bold text-white text-sm">GameBazar Zəmanətli Depozit Sistemi</h4>
+            <p class="mt-0.5 leading-relaxed">Platformamızda aparılan bütün alqı-satqı əməliyyatları tam olaraq sistemin daxili depozit güvənliyi ilə qorunur. Pul hesabı alana qədər dondurulur.</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fa-solid fa-lock text-red-main text-xl mt-1"></i>
+          <div>
+            <h4 class="font-bold text-white text-sm">Fırıldaqçılıqdan 100% Qorunma</h4>
+            <p class="mt-0.5 leading-relaxed">Ödəniş etdiyiniz məbləğ birbaşa satıcıya verilmir. Siz hesaba girib şəxsi bağlamaları dəyişib təsdiqlədikdən sonra məbləğ satıcının balansına köçürülür.</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fa-solid fa-headset text-red-main text-xl mt-1"></i>
+          <div>
+            <h4 class="font-bold text-white text-sm">24/7 Canlı Admin Dəstəyi</h4>
+            <p class="mt-0.5 leading-relaxed">Hər hansı bir problem yarandıqda Dəstək Mərkəzi vasitəsilə adminlərlə dərhal əlaqə saxlaya və mübahisəli məsələləri həll edə bilərsiniz.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
-  <!-- MAIN APP CONTENT -->
+  <!-- ƏSAS TƏTBİQ İÇƏRİYİ -->
   <main id="appContent" class="max-w-4xl mx-auto px-4 py-4 hidden">
-    <!-- Category Filter Bar -->
-    <div class="flex space-x-2 overflow-x-auto pb-4 scrollbar-none mb-4">
-      <button onclick="filterGame('ALL')" class="bg-red-main text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Bütün Oyunlar</button>
-      <button onclick="filterGame('PUBG Mobile')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">PUBG Mobile</button>
-      <button onclick="filterGame('PES Mobile')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">PES Mobile</button>
-      <button onclick="filterGame('Clash of Clans')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">Clash of Clans</button>
-      <button onclick="filterGame('Hay Day')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">Hay Day</button>
+    
+    <!-- KATEQORİYA SEÇİMİ -->
+    <div class="flex space-x-2 overflow-x-auto pb-4 scrollbar-none mb-4" id="categoryBar">
+      <button onclick="filterGame('ALL', this)" class="cat-btn active-nav-btn bg-zinc-900 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition">Bütün Oyunlar</button>
+      <button onclick="filterGame('PUBG Mobile', this)" class="cat-btn bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition">PUBG Mobile</button>
+      <button onclick="filterGame('PES Mobile', this)" class="cat-btn bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition">PES Mobile</button>
+      <button onclick="filterGame('Clash of Clans', this)" class="cat-btn bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition">Clash of Clans</button>
+      <button onclick="filterGame('Hay Day', this)" class="cat-btn bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition">Hay Day</button>
     </div>
 
-    <!-- ELANLAR SIYAHISI -->
-    <div id="listingsSection">
-      <h2 class="text-lg font-bold mb-3 border-l-4 border-red-main pl-2">Aktiv Elanlar</h2>
-      <div id="listingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- JS ilə dolacaq -->
+    <!-- ELANLAR -->
+    <div id="listingsSection" class="tab-page">
+      <!-- Mənim Dondurulmuş Əməliyyatlarım (Əgər varsa) -->
+      <div id="myEscrowsBlock" class="mb-6 hidden glass-card p-4 rounded-2xl border-yellow-500/40">
+        <h3 class="font-bold text-sm text-yellow-500 mb-2"><i class="fa-solid fa-clock-rotate-left"></i> Dondurulmuş Hesab Alışlarınız</h3>
+        <div id="escrowItems" class="space-y-3"></div>
       </div>
+
+      <h2 class="text-lg font-bold mb-3 border-l-4 border-red-main pl-2">Aktiv Elanlar</h2>
+      <div id="listingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </div>
 
-    <!-- ELAN YERLƏŞDİRMƏ BÖLMƏSİ -->
-    <div id="newListingSection" class="hidden glass-card p-6 rounded-2xl">
-      <h2 class="text-xl font-bold mb-4 text-red-main border-b border-zinc-800 pb-2">Yeni Oyun Elanı Yarat</h2>
+    <!-- ELAN YERLƏŞDİRMƏ -->
+    <div id="newListingSection" class="tab-page hidden glass-card p-6 rounded-2xl">
+      <h2 class="text-xl font-bold mb-4 text-red-main border-b border-zinc-800 pb-2">Yeni Elan Yerləşdir</h2>
       <form onsubmit="handleCreateListing(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-zinc-400 mb-1">Oyun Seçin</label>
-          <select id="listingGame" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+          <select id="listingGame" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white">
             <option value="PUBG Mobile">PUBG Mobile</option>
-            <option value="PES Mobile">PES Mobile (eFootball)</option>
+            <option value="PES Mobile">PES Mobile</option>
             <option value="Clash of Clans">Clash of Clans</option>
             <option value="Hay Day">Hay Day</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-zinc-400 mb-1">Başlıq</label>
-          <input type="text" id="listingTitle" placeholder="Məs: 75 Level VIP Hesab M416 Buz Diyarı" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+          <input type="text" id="listingTitle" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white">
         </div>
         <div>
           <label class="block text-xs font-semibold text-zinc-400 mb-1">Qiymət (AZN)</label>
-          <input type="number" id="listingPrice" placeholder="50" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+          <input type="number" id="listingPrice" step="0.01" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şəkil URL (Əsas görünüş üçün)</label>
-          <input type="url" id="listingImage" placeholder="https://..." required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Qalereyadan Şəkil Seçin</label>
+          <input type="file" id="listingImageFile" accept="image/*" required onchange="previewImage(event)" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2 text-sm text-white">
+          <img id="imagePreview" class="mt-2 h-32 rounded-lg hidden object-cover border border-red-500/30">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Hesab Haqqında Ətraflı Məlumat</label>
-          <textarea id="listingDesc" rows="4" placeholder="Hesabdakı nadir əşyalar, bağlama üsulları və s..." required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white"></textarea>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Ətraflı Məlumat</label>
+          <textarea id="listingDesc" rows="4" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white"></textarea>
         </div>
-        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg">Elanı Admin Təsdiqinə Göndər</button>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3.5 rounded-xl shadow-lg">Admin Təsdiqinə Göndər</button>
       </form>
     </div>
 
-    <!-- DƏSTƏK VƏ ŞİKAYƏT BÖLMƏSİ -->
-    <div id="supportSection" class="hidden glass-card p-6 rounded-2xl space-y-6">
-      <h2 class="text-xl font-bold text-red-main border-b border-zinc-800 pb-2">Dəstək & Əlaqə Mərkəzi</h2>
-      
+    <!-- DEPOZİT VƏ ÇIXARIŞ BÖLMƏSİ -->
+    <div id="financeSection" class="tab-page hidden glass-card p-6 rounded-2xl space-y-6">
+      <h2 class="text-xl font-bold text-red-main border-b border-zinc-800 pb-2">Balans Əməliyyatları</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Depozit -->
+        <div class="bg-zinc-900/80 p-4 rounded-xl border border-zinc-800">
+          <h3 class="font-bold text-green-400 mb-2"><i class="fa-solid fa-arrow-down-long"></i> Depozit Et (Balans Artır)</h3>
+          <form onsubmit="handleDepositRequest(event)" class="space-y-3">
+            <input type="number" id="depAmount" placeholder="Məbləğ (AZN)" required class="w-full bg-black border border-zinc-800 p-2.5 rounded-lg text-sm text-white">
+            <input type="text" id="depNote" placeholder="Ödəniş qəbz nömrəsi / Qeyd" required class="w-full bg-black border border-zinc-800 p-2.5 rounded-lg text-sm text-white">
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-xs">Depozit Sorğusu Göndər</button>
+          </form>
+        </div>
+        <!-- Çıxarış -->
+        <div class="bg-zinc-900/80 p-4 rounded-xl border border-zinc-800">
+          <h3 class="font-bold text-red-main mb-2"><i class="fa-solid fa-arrow-up-long"></i> Çıxarış Et (Pulu Çək)</h3>
+          <form onsubmit="handleWithdrawRequest(event)" class="space-y-3">
+            <input type="number" id="witAmount" placeholder="Məbləğ (AZN)" required class="w-full bg-black border border-zinc-800 p-2.5 rounded-lg text-sm text-white">
+            <input type="text" id="witCard" placeholder="Kart Nömrəsi (16 rəqəm)" required class="w-full bg-black border border-zinc-800 p-2.5 rounded-lg text-sm text-white">
+            <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-2 rounded-lg text-xs">Çıxarış Sorğusu Göndər</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- DƏSTƏK -->
+    <div id="supportSection" class="tab-page hidden glass-card p-6 rounded-2xl space-y-6">
+      <h2 class="text-xl font-bold text-red-main border-b border-zinc-800 pb-2">Dəstək Mərkəzi</h2>
       <form onsubmit="handleSupportSubmit(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Müraciət Mövzusu</label>
-          <select id="supportTopic" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
-            <option value="Satıcı Haqqında Şikayət">Satıcı haqqında şikayət</option>
-            <option value="Depozit / Çıxarış Sorğusu">Depozit / Çıxarış sorğusu</option>
-            <option value="Hesab Kilidlənməsi">Hesab kilidlənməsi / Texniki Xəta</option>
-            <option value="Təklif və Digər">Digər məsələlər</option>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mövzu</label>
+          <select id="supportTopic" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white">
+            <option value="Satıcı Haqqında Şikayət">Satıcı Haqqında Şikayət</option>
+            <option value="Depozit / Çıxarış">Depozit / Çıxarış Məsələsi</option>
+            <option value="Digər">Digər</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mesajınız / Ətraflı Şikayətiniz</label>
-          <textarea id="supportMessage" rows="4" required placeholder="Problemi aydın şəkildə qeyd edin..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white"></textarea>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mesajınız</label>
+          <textarea id="supportMessage" rows="4" required class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white"></textarea>
         </div>
-        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg">Sorğunu Adminlərə Göndər</button>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3.5 rounded-xl">Sorğunu Göndər</button>
       </form>
-
-      <!-- Göndərilmiş Dəstək Cavabları -->
-      <div class="mt-8 border-t border-zinc-800 pt-4">
-        <h3 class="text-sm font-bold mb-3 text-zinc-300">Sizin Sorğularınız və Admin Cavabları</h3>
-        <div id="userSupportTickets" class="space-y-3 text-xs">
-          <!-- JS ilə yüklənəcək -->
-        </div>
-      </div>
-    </div>
-
-    <!-- TƏHLÜKƏSİZLİK VƏ FIRILDAQÇILIQ XƏBƏRDARLIĞI -->
-    <div id="securitySection" class="hidden glass-card p-6 rounded-2xl space-y-4">
-      <div class="flex items-center space-x-3 text-red-main">
-        <i class="fa-solid fa-shield-halved text-3xl"></i>
-        <h2 class="text-xl font-bold">GameBazar Təhlükəsizlik və Zəmanət Qaydaları</h2>
-      </div>
-      <div class="space-y-3 text-xs text-zinc-300 leading-relaxed">
-        <p class="bg-red-950/40 border border-red-500/30 p-3 rounded-lg text-red-200">
-          <strong>DİQQƏT:</strong> GameBazar rəsmi vasitəçiliyi olmadan heç bir şəxsə qabaqcadan ödəniş etməyin! Fırıldaqçılıq hallarına qarşı aşağıdakı qaydalara riayət etməyiniz mütləqdir.
-        </p>
-        <h3 class="font-bold text-sm text-white">Təhlükəsiz Ticarət Qaydaları:</h3>
-        <ul class="list-disc pl-5 space-y-2">
-          <li><strong>Yoxlayaraq Alın:</strong> Hesab alarkən əvvəlcə daxil olub bağlamaların (Google, Facebook, Twitter) tam sizə təhvil verildiyindən əmin olun.</li>
-          <li><strong>Depozit Vasitəçiliyi:</strong> Ödənişləri GameBazar daxili balans depoziti vasitəsilə həyata keçirin. Pulu yalnız hesabı tam təhvil aldıqdan sonra təsdiqləyin.</li>
-          <li><strong>Mavi Tik İkonu:</strong> Təsdiqlənmiş (Mavi Tikli <i class="fa-solid fa-circle-check text-blue-500"></i>) satıcılara üstünlük verin. Onların şəxsiyyəti GameBazar tərəfindən doğrulanıb.</li>
-          <li><strong>Şübhəli Hallar:</strong> Sizdən Telegram/WhatsApp üzərindən əlavə komissiya və ya şübhəli keçidlərə daxil olmağı tələb edənləri dərhal Dəstək bölməsindən şikayət edin.</li>
-        </ul>
-      </div>
+      <div id="userSupportTickets" class="space-y-3 text-xs"></div>
     </div>
   </main>
 
-  <!-- NAVIGATION BAR (TELEGRAM STYLE) -->
+  <!-- NAVİQASİYA (TELEGRAM BOTTOM NAV) -->
   <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-black/95 border-t border-zinc-800 flex justify-around py-2 z-50 hidden">
-    <button onclick="showTab('listings')" class="flex flex-col items-center text-red-main text-xs font-semibold">
-      <i class="fa-solid fa-store text-lg"></i>
+    <button onclick="showTab('listings', this)" class="nav-item active-nav-btn flex flex-col items-center px-4 py-1.5 rounded-xl text-xs font-semibold transition">
+      <i class="fa-solid fa-store text-base mb-0.5"></i>
       <span>Elanlar</span>
     </button>
-    <button onclick="showTab('newListing')" class="flex flex-col items-center text-zinc-400 hover:text-white text-xs font-semibold">
-      <i class="fa-solid fa-circle-plus text-lg"></i>
+    <button onclick="showTab('newListing', this)" class="nav-item text-zinc-400 flex flex-col items-center px-4 py-1.5 rounded-xl text-xs font-semibold transition">
+      <i class="fa-solid fa-circle-plus text-base mb-0.5"></i>
       <span>Elan Ver</span>
     </button>
-    <button onclick="showTab('support')" class="flex flex-col items-center text-zinc-400 hover:text-white text-xs font-semibold">
-      <i class="fa-solid fa-headset text-lg"></i>
-      <span>Dəstək</span>
+    <button onclick="showTab('finance', this)" class="nav-item text-zinc-400 flex flex-col items-center px-4 py-1.5 rounded-xl text-xs font-semibold transition">
+      <i class="fa-solid fa-money-bill-transfer text-base mb-0.5"></i>
+      <span>Balans</span>
     </button>
-    <button onclick="showTab('security')" class="flex flex-col items-center text-zinc-400 hover:text-white text-xs font-semibold">
-      <i class="fa-solid fa-shield-cat text-lg"></i>
-      <span>Təhlükəsizlik</span>
+    <button onclick="showTab('support', this)" class="nav-item text-zinc-400 flex flex-col items-center px-4 py-1.5 rounded-xl text-xs font-semibold transition">
+      <i class="fa-solid fa-headset text-base mb-0.5"></i>
+      <span>Dəstək</span>
     </button>
   </nav>
 
-  <!-- SCRIPT LOGIC -->
   <script>
     const firebaseConfig = {
       databaseURL: "https://gamebazar-8fc97-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -243,8 +297,8 @@
     const db = firebase.database();
 
     let currentUser = null;
+    let base64Image = "";
 
-    // Toast Notification System
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -256,7 +310,7 @@
       setTimeout(() => toast.remove(), 3500);
     }
 
-    function togglePasswordVisibility(inputId, eyeId) {
+    function togglePassword(inputId, eyeId) {
       const input = document.getElementById(inputId);
       const eye = document.getElementById(eyeId);
       if (input.type === 'password') {
@@ -268,17 +322,30 @@
       }
     }
 
+    // Nömrəni 211 33 44 formatına salmaq
+    function formatPhoneNumber(input) {
+      let raw = input.value.replace(/\D/g, '');
+      if (raw.length > 7) raw = raw.substring(0, 7);
+      
+      let formatted = "";
+      if (raw.length > 0) formatted += raw.substring(0, 3);
+      if (raw.length >= 4) formatted += " " + raw.substring(3, 5);
+      if (raw.length >= 6) formatted += " " + raw.substring(5, 7);
+      
+      input.value = formatted;
+    }
+
     function switchAuthTab(tab) {
       if (tab === 'login') {
         document.getElementById('loginForm').classList.remove('hidden');
         document.getElementById('registerForm').classList.add('hidden');
-        document.getElementById('loginTabBtn').className = "w-1/2 py-2 font-bold text-red-main border-b-2 border-red-main";
-        document.getElementById('registerTabBtn').className = "w-1/2 py-2 font-bold text-zinc-400";
+        document.getElementById('loginTabBtn').className = "w-1/2 py-3 font-bold text-red-main border-b-2 border-red-main text-lg";
+        document.getElementById('registerTabBtn').className = "w-1/2 py-3 font-bold text-zinc-400 text-lg";
       } else {
         document.getElementById('loginForm').classList.add('hidden');
         document.getElementById('registerForm').classList.remove('hidden');
-        document.getElementById('registerTabBtn').className = "w-1/2 py-2 font-bold text-red-main border-b-2 border-red-main";
-        document.getElementById('loginTabBtn').className = "w-1/2 py-2 font-bold text-zinc-400";
+        document.getElementById('registerTabBtn').className = "w-1/2 py-3 font-bold text-red-main border-b-2 border-red-main text-lg";
+        document.getElementById('loginTabBtn').className = "w-1/2 py-3 font-bold text-zinc-400 text-lg";
       }
     }
 
@@ -287,35 +354,33 @@
       const fullName = document.getElementById('regFullName').value.trim();
       const username = document.getElementById('regUsername').value.trim().toLowerCase();
       const prefix = document.getElementById('regPrefix').value;
-      const phoneRest = document.getElementById('regPhone').value.trim();
-      const password = document.getElementById('regPassword').value;
+      const phoneRaw = document.getElementById('regPhone').value.replace(/\s+/g, '');
+      const pass = document.getElementById('regPassword').value;
+      const passConf = document.getElementById('regPasswordConfirm').value;
 
-      if (phoneRest.length !== 7) {
-        showToast("Mobil nömrə tam olaraq 7 rəqəm olmalıdır!", "error");
+      if (phoneRaw.length !== 7) {
+        showToast("Nömrə tam olaraq 7 rəqəmli olmalıdır!", "error");
+        return;
+      }
+      if (pass !== passConf) {
+        showToast("Şifrələr bir-biri ilə üst-üstə düşmür!", "error");
         return;
       }
 
-      const fullPhone = prefix + phoneRest;
+      const fullPhone = prefix + phoneRaw;
 
-      db.ref('users/' + username).once('value', snapshot => {
-        if (snapshot.exists()) {
-          showToast("Bu istifadəçi adı artıq götürülüb!", "error");
+      db.ref('users/' + username).once('value', snap => {
+        if (snap.exists()) {
+          showToast("Bu istifadəçi adı artıq tutulub!", "error");
         } else {
           const userData = {
-            fullName,
-            username,
-            phone: fullPhone,
-            password,
-            balance: 0.00,
-            isVerified: false,
-            createdAt: Date.now()
+            fullName, username, phone: fullPhone, password: pass,
+            balance: 0.00, heldBalance: 0.00, isVerified: false, createdAt: Date.now()
           };
           db.ref('users/' + username).set(userData, err => {
             if (!err) {
               showToast("Qeydiyyat uğurla tamamlandı! Giriş edin.", "success");
               switchAuthTab('login');
-            } else {
-              showToast("Xəta baş verdi: " + err.message, "error");
             }
           });
         }
@@ -324,31 +389,31 @@
 
     function handleLogin(e) {
       e.preventDefault();
-      const identifier = document.getElementById('loginIdentifier').value.trim().toLowerCase();
-      const password = document.getElementById('loginPassword').value;
+      const prefix = document.getElementById('loginPrefix').value;
+      const idInput = document.getElementById('loginIdentifier').value.trim().toLowerCase();
+      const pass = document.getElementById('loginPassword').value;
 
-      db.ref('users').once('value', snapshot => {
-        const users = snapshot.val();
-        let foundUser = null;
+      let targetSearch = prefix ? (prefix + idInput.replace(/\s+/g, '')) : idInput;
 
+      db.ref('users').once('value', snap => {
+        const users = snap.val();
+        let found = null;
         if (users) {
-          Object.keys(users).forEach(key => {
-            const u = users[key];
-            if (u.username === identifier || u.phone === identifier) {
-              if (u.password === password) {
-                foundUser = u;
-              }
+          Object.keys(users).forEach(k => {
+            const u = users[k];
+            if (u.username === targetSearch || u.phone === targetSearch) {
+              if (u.password === pass) found = u;
             }
           });
         }
 
-        if (foundUser) {
-          currentUser = foundUser;
-          localStorage.setItem('gb_user', JSON.stringify(foundUser));
+        if (found) {
+          currentUser = found;
+          localStorage.setItem('gb_user', JSON.stringify(found));
           initApp();
           showToast("Xoş gəldiniz, " + currentUser.fullName, "success");
         } else {
-          showToast("İstifadəçi adı/nömrə və ya şifrə yanlışdır!", "error");
+          showToast("Məlumatlar yanlışdır!", "error");
         }
       });
     }
@@ -359,14 +424,24 @@
       document.getElementById('bottomNav').classList.remove('hidden');
       document.getElementById('headerUserBlock').classList.remove('hidden');
 
-      document.getElementById('headerUsername').innerText = currentUser.username;
-      document.getElementById('userBalanceDisplay').innerText = (currentUser.balance || 0).toFixed(2) + " AZN";
-      if (currentUser.isVerified) {
-        document.getElementById('headerVerifiedBadge').classList.remove('hidden');
-      }
-
+      listenUserData();
       loadListings();
       loadUserTickets();
+      loadEscrows();
+    }
+
+    function listenUserData() {
+      db.ref('users/' + currentUser.username).on('value', snap => {
+        if (snap.exists()) {
+          currentUser = snap.val();
+          document.getElementById('headerUsername').innerText = currentUser.username;
+          document.getElementById('userBalanceDisplay').innerText = (currentUser.balance || 0).toFixed(2) + " AZN";
+          document.getElementById('userHeldDisplay').innerText = `(${(currentUser.heldBalance || 0).toFixed(2)} AZN Dondurulub)`;
+          if (currentUser.isVerified) {
+            document.getElementById('headerVerifiedBadge').classList.remove('hidden');
+          }
+        }
+      });
     }
 
     function logout() {
@@ -374,25 +449,46 @@
       location.reload();
     }
 
-    function showTab(tabName) {
-      document.getElementById('listingsSection').classList.add('hidden');
-      document.getElementById('newListingSection').classList.add('hidden');
-      document.getElementById('supportSection').classList.add('hidden');
-      document.getElementById('securitySection').classList.add('hidden');
+    function showTab(tabName, btnEl) {
+      document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabName + 'Section').classList.remove('hidden');
 
-      if (tabName === 'listings') document.getElementById('listingsSection').classList.remove('hidden');
-      if (tabName === 'newListing') document.getElementById('newListingSection').classList.remove('hidden');
-      if (tabName === 'support') document.getElementById('supportSection').classList.remove('hidden');
-      if (tabName === 'security') document.getElementById('securitySection').classList.remove('hidden');
+      if (btnEl) {
+        document.querySelectorAll('.nav-item').forEach(b => {
+          b.classList.remove('active-nav-btn');
+          b.classList.add('text-zinc-400');
+        });
+        btnEl.classList.add('active-nav-btn');
+        btnEl.classList.remove('text-zinc-400');
+      }
+    }
+
+    function previewImage(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          base64Image = reader.result;
+          const img = document.getElementById('imagePreview');
+          img.src = base64Image;
+          img.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     function handleCreateListing(e) {
       e.preventDefault();
-      const newListing = {
+      if (!base64Image) {
+        showToast("Lütfən şəkil seçin!", "error");
+        return;
+      }
+
+      const listing = {
         game: document.getElementById('listingGame').value,
         title: document.getElementById('listingTitle').value.trim(),
         price: parseFloat(document.getElementById('listingPrice').value),
-        image: document.getElementById('listingImage').value.trim(),
+        image: base64Image,
         desc: document.getElementById('listingDesc').value.trim(),
         seller: currentUser.username,
         sellerPhone: currentUser.phone,
@@ -400,101 +496,200 @@
         createdAt: Date.now()
       };
 
-      db.ref('listings').push(newListing, err => {
+      db.ref('listings').push(listing, err => {
         if (!err) {
-          showToast("Elan göndərildi! Admin təsdiqindən sonra dərc olunacaq.", "success");
+          showToast("Elan admin təsdiqinə gönderildi!", "success");
           e.target.reset();
-          showTab('listings');
+          document.getElementById('imagePreview').classList.add('hidden');
+          base64Image = "";
+          showTab('listings', document.querySelectorAll('.nav-item')[0]);
         }
       });
     }
 
     function loadListings(gameFilter = 'ALL') {
       const grid = document.getElementById('listingsGrid');
-      grid.innerHTML = '<p class="text-xs text-zinc-500">Elanlar yüklənir...</p>';
+      grid.innerHTML = '<p class="text-xs text-zinc-500">Yüklənir...</p>';
 
-      db.ref('listings').on('value', snapshot => {
+      db.ref('listings').on('value', snap => {
         grid.innerHTML = '';
-        const data = snapshot.val();
-        if (!data) {
-          grid.innerHTML = '<p class="text-xs text-zinc-500">Hələ ki, heç bir təsdiqlənmiş elan yoxdur.</p>';
-          return;
-        }
+        const data = snap.val();
+        if (!data) return;
 
-        Object.keys(data).forEach(key => {
-          const item = data[key];
-          if (item.status === 'APPROVED') {
-            if (gameFilter === 'ALL' || item.game === gameFilter) {
-              const card = document.createElement('div');
-              card.className = "glass-card rounded-xl overflow-hidden flex flex-col justify-between border border-zinc-800 hover:border-red-main transition";
-              card.innerHTML = `
-                <img src="${item.image}" class="w-full h-40 object-cover" alt="Game">
-                <div class="p-3 space-y-2">
-                  <div class="flex justify-between items-center text-xs">
-                    <span class="bg-red-950 text-red-400 border border-red-800/50 px-2 py-0.5 rounded font-bold">${item.game}</span>
-                    <span class="text-green-400 font-extrabold text-sm">${item.price} AZN</span>
-                  </div>
-                  <h3 class="font-bold text-sm text-white line-clamp-1">${item.title}</h3>
-                  <p class="text-xs text-zinc-400 line-clamp-2">${item.desc}</p>
-                  <div class="flex justify-between items-center pt-2 border-t border-zinc-800 text-xs">
-                    <span class="text-zinc-500"><i class="fa-solid fa-user text-zinc-400"></i> ${item.seller}</span>
-                    <a href="https://wa.me/994${item.sellerPhone.substring(1)}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-bold"><i class="fa-brands fa-whatsapp"></i> Əlaqə</a>
-                  </div>
+        Object.keys(data).forEach(id => {
+          const item = data[id];
+          if (item.status === 'APPROVED' && (gameFilter === 'ALL' || item.game === gameFilter)) {
+            const card = document.createElement('div');
+            card.className = "glass-card rounded-xl overflow-hidden flex flex-col justify-between border border-zinc-800";
+            card.innerHTML = `
+              <img src="${item.image}" class="w-full h-44 object-cover">
+              <div class="p-3 space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="bg-red-950 text-red-400 border border-red-800/50 px-2 py-0.5 rounded font-bold">${item.game}</span>
+                  <span class="text-green-400 font-extrabold text-sm">${item.price.toFixed(2)} AZN</span>
                 </div>
-              `;
-              grid.appendChild(card);
-            }
+                <h3 class="font-bold text-sm text-white line-clamp-1">${item.title}</h3>
+                <p class="text-xs text-zinc-400 line-clamp-2">${item.desc}</p>
+                <div class="pt-2 border-t border-zinc-800 flex justify-between items-center">
+                  <span class="text-xs text-zinc-400"><i class="fa-solid fa-user"></i> ${item.seller}</span>
+                  ${item.seller !== currentUser.username ? 
+                    `<button onclick="buyAccount('${id}', ${item.price}, '${item.seller}')" class="bg-red-main bg-red-hover text-white px-3 py-1.5 rounded-lg text-xs font-bold">Satın Al (Güvənli)</button>` : 
+                    `<span class="text-xs text-yellow-500 font-bold">Sizin Elanınız</span>`}
+                </div>
+              </div>
+            `;
+            grid.appendChild(card);
           }
         });
       });
     }
 
-    function filterGame(game) {
+    // ESCROW ALIQ-SATQI (PULUN DONDURULMASI SİSTEMİ)
+    function buyAccount(listingId, price, sellerUsername) {
+      if ((currentUser.balance || 0) < price) {
+        showToast("Balansınızda kifayət qədər vəsait yoxdur!", "error");
+        return;
+      }
+
+      if (confirm(`${price} AZN balansınızdan çıxılaraq DONDURULACAQ. Hesabı təhvil aldıqdan sonra təsdiqləyəcəksiniz. Razısınız?`)) {
+        const newBalance = currentUser.balance - price;
+        const newHeld = (currentUser.heldBalance || 0) + price;
+
+        db.ref('users/' + currentUser.username).update({ balance: newBalance, heldBalance: newHeld });
+
+        const deal = {
+          listingId, price, buyer: currentUser.username, seller: sellerUsername,
+          status: 'HELD', createdAt: Date.now()
+        };
+
+        db.ref('deals').push(deal, err => {
+          if (!err) {
+            db.ref('listings/' + listingId).update({ status: 'SOLD' });
+            showToast("Məbləğ donduruldu! Hesabı təhvil alıb təsdiq edin.", "success");
+          }
+        });
+      }
+    }
+
+    function loadEscrows() {
+      db.ref('deals').on('value', snap => {
+        const data = snap.val();
+        const container = document.getElementById('escrowItems');
+        const block = document.getElementById('myEscrowsBlock');
+        container.innerHTML = '';
+        let hasEscrow = false;
+
+        if (data) {
+          Object.keys(data).forEach(id => {
+            const d = data[id];
+            if (d.buyer === currentUser.username && d.status === 'HELD') {
+              hasEscrow = true;
+              const div = document.createElement('div');
+              div.className = "bg-zinc-900 p-3 rounded-xl flex justify-between items-center text-xs";
+              div.innerHTML = `
+                <div>
+                  <span class="text-zinc-300 font-bold">Satıcı: ${d.seller}</span>
+                  <span class="text-green-400 font-bold block">${d.price.toFixed(2)} AZN</span>
+                </div>
+                <button onclick="confirmDeal('${id}', '${d.seller}', ${d.price})" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg">
+                  Təhvil Aldım (Pulu Satıcıya Ver)
+                </button>
+              `;
+              container.appendChild(div);
+            }
+          });
+        }
+        if (hasEscrow) block.classList.remove('hidden'); else block.classList.add('hidden');
+      });
+    }
+
+    function confirmDeal(dealId, sellerUsername, price) {
+      if (confirm("Hesabı tam təhvil aldığınızı və pulun satıcıya keçməsini təsdiq edirsiniz?")) {
+        db.ref('users/' + sellerUsername).once('value', snap => {
+          const sData = snap.val();
+          const sBal = (sData.balance || 0) + price;
+          db.ref('users/' + sellerUsername).update({ balance: sBal });
+
+          const newHeld = currentUser.heldBalance - price;
+          db.ref('users/' + currentUser.username).update({ heldBalance: newHeld });
+
+          db.ref('deals/' + dealId).update({ status: 'COMPLETED' });
+          showToast("Əməliyyat uğurla tamamlandı!", "success");
+        });
+      }
+    }
+
+    function filterGame(game, btn) {
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.classList.remove('active-nav-btn');
+        b.classList.add('bg-zinc-900');
+      });
+      btn.classList.add('active-nav-btn');
       loadListings(game);
+    }
+
+    function handleDepositRequest(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('depAmount').value);
+      const note = document.getElementById('depNote').value.trim();
+
+      db.ref('requests').push({
+        type: 'DEPOSIT', username: currentUser.username, amount, note, status: 'PENDING', createdAt: Date.now()
+      }, () => {
+        showToast("Depozit sorğusu adminə göndərildi!", "success");
+        e.target.reset();
+      });
+    }
+
+    function handleWithdrawRequest(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('witAmount').value);
+      const card = document.getElementById('witCard').value.trim();
+
+      if ((currentUser.balance || 0) < amount) {
+        showToast("Balansınızda yetərli məbləğ yoxdur!", "error");
+        return;
+      }
+
+      db.ref('requests').push({
+        type: 'WITHDRAW', username: currentUser.username, amount, card, status: 'PENDING', createdAt: Date.now()
+      }, () => {
+        showToast("Çıxarış sorğusu adminə göndərildi!", "success");
+        e.target.reset();
+      });
     }
 
     function handleSupportSubmit(e) {
       e.preventDefault();
-      const topic = document.getElementById('supportTopic').value;
-      const message = document.getElementById('supportMessage').value.trim();
-
-      const ticket = {
+      db.ref('support_tickets').push({
         username: currentUser.username,
-        topic,
-        message,
-        reply: '',
-        status: 'OPEN',
-        createdAt: Date.now()
-      };
-
-      db.ref('support_tickets').push(ticket, err => {
-        if (!err) {
-          showToast("Dəstək sorğunuz adminlərə çatdırıldı.", "success");
-          e.target.reset();
-          loadUserTickets();
-        }
+        topic: document.getElementById('supportTopic').value,
+        message: document.getElementById('supportMessage').value.trim(),
+        status: 'OPEN', createdAt: Date.now()
+      }, () => {
+        showToast("Dəstək sorğusu göndərildi!", "success");
+        e.target.reset();
       });
     }
 
     function loadUserTickets() {
-      const container = document.getElementById('userSupportTickets');
-      db.ref('support_tickets').on('value', snapshot => {
+      db.ref('support_tickets').on('value', snap => {
+        const container = document.getElementById('userSupportTickets');
         container.innerHTML = '';
-        const data = snapshot.val();
+        const data = snap.val();
         if (!data) return;
-
-        Object.keys(data).forEach(key => {
-          const t = data[key];
+        Object.keys(data).forEach(k => {
+          const t = data[k];
           if (t.username === currentUser.username) {
             const div = document.createElement('div');
-            div.className = "bg-zinc-900 border border-zinc-800 p-3 rounded-lg";
+            div.className = "bg-zinc-900 border border-zinc-800 p-3 rounded-xl";
             div.innerHTML = `
-              <div class="flex justify-between text-zinc-400 mb-1">
-                <span class="font-bold text-red-main">${t.topic}</span>
+              <div class="flex justify-between text-zinc-400 font-bold mb-1">
+                <span>${t.topic}</span>
                 <span>${t.status === 'OPEN' ? 'Gözləmədə' : 'Cavablandı'}</span>
               </div>
               <p class="text-zinc-300">${t.message}</p>
-              ${t.reply ? `<div class="mt-2 bg-zinc-950 p-2 rounded border border-red-500/30 text-green-400"><strong>Admin Cavabı:</strong> ${t.reply}</div>` : ''}
+              ${t.reply ? `<div class="mt-2 bg-black p-2 rounded border border-red-500/30 text-green-400"><strong>Admin:</strong> ${t.reply}</div>` : ''}
             `;
             container.appendChild(div);
           }
@@ -502,11 +697,10 @@
       });
     }
 
-    // Auto-login Check
     window.onload = () => {
-      const savedUser = localStorage.getItem('gb_user');
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
+      const saved = localStorage.getItem('gb_user');
+      if (saved) {
+        currentUser = JSON.parse(saved);
         initApp();
       }
     };
