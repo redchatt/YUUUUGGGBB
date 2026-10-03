@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameBazar - Admin Panel</title>
+  <title>GameBazar - Admin Control Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -11,28 +11,27 @@
 </head>
 <body class="bg-black text-white font-sans p-4">
 
-  <!-- ADMIN LOGIN SECTION -->
   <div id="adminAuthSection" class="max-w-md mx-auto my-12 bg-zinc-900 p-6 rounded-2xl border border-red-600">
     <h2 class="text-2xl font-black text-red-600 mb-4 text-center">ADMIN PANEL GİRİŞİ</h2>
     <form onsubmit="handleAdminLogin(event)" class="space-y-4">
       <div>
         <label class="text-xs text-zinc-400">Admin Login</label>
-        <input type="text" id="adminLogin" required class="w-full bg-zinc-800 p-3 rounded text-sm text-white focus:outline-none focus:border-red-500 border border-zinc-700">
+        <input type="text" id="adminLogin" required class="w-full bg-zinc-800 p-3 rounded text-sm text-white border border-zinc-700">
       </div>
       <div>
         <label class="text-xs text-zinc-400">Admin Şifrə</label>
-        <input type="password" id="adminPass" required class="w-full bg-zinc-800 p-3 rounded text-sm text-white focus:outline-none focus:border-red-500 border border-zinc-700">
+        <input type="password" id="adminPass" required class="w-full bg-zinc-800 p-3 rounded text-sm text-white border border-zinc-700">
       </div>
       <button type="submit" class="w-full bg-red-600 font-bold py-3 rounded hover:bg-red-700">Daxil Ol</button>
     </form>
   </div>
 
-  <!-- ADMIN DASHBOARD -->
   <div id="adminDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
-    <!-- Header STATS -->
+    
+    <!-- STATİSTİKA -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">Ümumi İstifadəçilər</span>
+        <span class="text-xs text-zinc-400">İstifadəçilər</span>
         <h3 id="statUsers" class="text-2xl font-bold text-red-500">0</h3>
       </div>
       <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
@@ -40,33 +39,39 @@
         <h3 id="statPendingListings" class="text-2xl font-bold text-yellow-500">0</h3>
       </div>
       <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">Aktiv Elanlar</span>
-        <h3 id="statApprovedListings" class="text-2xl font-bold text-green-500">0</h3>
+        <span class="text-xs text-zinc-400">Dondurulmuş Əməliyyatlar</span>
+        <h3 id="statDeals" class="text-2xl font-bold text-blue-500">0</h3>
       </div>
       <div class="bg-zinc-900 border border-red-600/40 p-4 rounded-xl">
-        <span class="text-xs text-zinc-400">Açıq Dəstək Sorğuları</span>
-        <h3 id="statOpenSupport" class="text-2xl font-bold text-blue-500">0</h3>
+        <span class="text-xs text-zinc-400">Maliyyə Sorğuları</span>
+        <h3 id="statRequests" class="text-2xl font-bold text-green-500">0</h3>
       </div>
     </div>
 
-    <!-- ELANLARIN YOXLAMASI -->
+    <!-- ELANLARIN TƏSDİQİ -->
     <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
-      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">Elan Təsdiqi və Yoxlanılması</h2>
+      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">Gözləyən Elanlar</h2>
       <div id="pendingListingsContainer" class="space-y-3"></div>
     </div>
 
-    <!-- İSTİFADƏÇİLƏR VƏ MAVİ TİK İDARƏSİ -->
+    <!-- DEPOZİT VƏ ÇIXARIŞ SORĞULARI -->
     <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
-      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">İstifadəçilər (Mavi Tik & Balans)</h2>
-      <div id="usersContainer" class="overflow-x-auto">
+      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">Maliyyə Sorğuları (Depozit/Çıxarış)</h2>
+      <div id="financialRequestsContainer" class="space-y-3"></div>
+    </div>
+
+    <!-- İSTİFADƏÇİ İDARƏSİ VƏ MAVİ TİK -->
+    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
+      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">İstifadəçilər və Balans</h2>
+      <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-zinc-300">
-          <thead class="bg-zinc-800 text-zinc-400 uppercase">
+          <thead class="bg-zinc-800 uppercase">
             <tr>
-              <th class="p-2">İstifadəçi Adı</th>
-              <th class="p-2">Ad Soyad</th>
-              <th class="p-2">Nömrə</th>
+              <th class="p-2">İstifadəçi</th>
+              <th class="p-2">Telefon</th>
               <th class="p-2">Balans</th>
-              <th class="p-2">Mavi Tik Statusu</th>
+              <th class="p-2">Dondurulub</th>
+              <th class="p-2">Mavi Tik</th>
               <th class="p-2">Əməliyyat</th>
             </tr>
           </thead>
@@ -75,11 +80,6 @@
       </div>
     </div>
 
-    <!-- DƏSTƏK & ŞİKAYƏT CAVABLANDIRMA -->
-    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
-      <h2 class="text-lg font-bold border-l-4 border-red-600 pl-2">Dəstək və Şikayətlər</h2>
-      <div id="supportTicketsContainer" class="space-y-3"></div>
-    </div>
   </div>
 
   <script>
@@ -99,22 +99,22 @@
         document.getElementById('adminDashboard').classList.remove('hidden');
         initAdminDashboard();
       } else {
-        alert("Giriş parametrləri yanlışdır!");
+        alert("Səhv login və ya şifrə!");
       }
     }
 
     function initAdminDashboard() {
-      loadStatsAndPendingListings();
+      loadPendingListings();
       loadUsers();
-      loadSupportTickets();
+      loadFinancialRequests();
     }
 
-    function loadStatsAndPendingListings() {
-      db.ref('listings').on('value', snapshot => {
-        const data = snapshot.val();
+    function loadPendingListings() {
+      db.ref('listings').on('value', snap => {
+        const data = snap.val();
         const container = document.getElementById('pendingListingsContainer');
         container.innerHTML = '';
-        let pending = 0, approved = 0;
+        let pending = 0;
 
         if (data) {
           Object.keys(data).forEach(id => {
@@ -122,58 +122,52 @@
             if (item.status === 'PENDING') {
               pending++;
               const div = document.createElement('div');
-              div.className = "bg-zinc-800 p-4 rounded flex justify-between items-center border border-yellow-500/30";
+              div.className = "bg-zinc-800 p-4 rounded flex justify-between items-center";
               div.innerHTML = `
-                <div>
-                  <span class="text-xs text-yellow-500 font-bold">[${item.game}]</span>
-                  <h4 class="font-bold text-sm text-white">${item.title} (${item.price} AZN)</h4>
-                  <p class="text-xs text-zinc-400">Satıcı: ${item.seller} | Tel: ${item.sellerPhone}</p>
+                <div class="flex items-center space-x-3">
+                  <img src="${item.image}" class="w-12 h-12 object-cover rounded">
+                  <div>
+                    <h4 class="font-bold text-sm text-white">${item.title} (${item.price} AZN)</h4>
+                    <p class="text-xs text-zinc-400">Satıcı: ${item.seller} | Tel: ${item.sellerPhone}</p>
+                  </div>
                 </div>
                 <div class="space-x-2">
                   <button onclick="approveListing('${id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">Təsdiqlə</button>
-                  <button onclick="rejectListing('${id}')" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold">Rədd Et</button>
+                  <button onclick="rejectListing('${id}')" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold">Sil</button>
                 </div>
               `;
               container.appendChild(div);
-            } else if (item.status === 'APPROVED') {
-              approved++;
             }
           });
         }
         document.getElementById('statPendingListings').innerText = pending;
-        document.getElementById('statApprovedListings').innerText = approved;
       });
     }
 
-    function approveListing(id) {
-      db.ref('listings/' + id).update({ status: 'APPROVED' });
-    }
-
-    function rejectListing(id) {
-      db.ref('listings/' + id).remove();
-    }
+    function approveListing(id) { db.ref('listings/' + id).update({ status: 'APPROVED' }); }
+    function rejectListing(id) { db.ref('listings/' + id).remove(); }
 
     function loadUsers() {
-      db.ref('users').on('value', snapshot => {
-        const users = snapshot.val();
+      db.ref('users').on('value', snap => {
+        const users = snap.val();
         const tbody = document.getElementById('usersTableBody');
         tbody.innerHTML = '';
-        let userCount = 0;
+        let count = 0;
 
         if (users) {
-          userCount = Object.keys(users).length;
-          Object.keys(users).forEach(username => {
-            const u = users[username];
+          count = Object.keys(users).length;
+          Object.keys(users).forEach(uName => {
+            const u = users[uName];
             const tr = document.createElement('tr');
             tr.className = "border-b border-zinc-800";
             tr.innerHTML = `
               <td class="p-2 font-bold">${u.username}</td>
-              <td class="p-2">${u.fullName}</td>
               <td class="p-2">${u.phone}</td>
               <td class="p-2 text-green-400 font-bold">${(u.balance || 0).toFixed(2)} AZN</td>
-              <td class="p-2">${u.isVerified ? '<span class="text-blue-500"><i class="fa-solid fa-circle-check"></i> Doğrulanıb</span>' : 'Adat'}</td>
-              <td class="p-2 space-x-1">
-                <button onclick="toggleVerify('${u.username}', ${!u.isVerified})" class="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+              <td class="p-2 text-yellow-500 font-bold">${(u.heldBalance || 0).toFixed(2)} AZN</td>
+              <td class="p-2">${u.isVerified ? '<span class="text-blue-500"><i class="fa-solid fa-circle-check"></i> Var</span>' : 'Yoxdur'}</td>
+              <td class="p-2">
+                <button onclick="toggleVerify('${u.username}', ${!u.isVerified})" class="bg-blue-600 px-2 py-1 rounded text-xs">
                   ${u.isVerified ? 'Mavi Tik Ləğv Et' : 'Mavi Tik Ver'}
                 </button>
               </td>
@@ -181,53 +175,52 @@
             tbody.appendChild(tr);
           });
         }
-        document.getElementById('statUsers').innerText = userCount;
+        document.getElementById('statUsers').innerText = count;
       });
     }
 
-    function toggleVerify(username, status) {
-      db.ref('users/' + username).update({ isVerified: status });
-    }
+    function toggleVerify(username, status) { db.ref('users/' + username).update({ isVerified: status }); }
 
-    function loadSupportTickets() {
-      db.ref('support_tickets').on('value', snapshot => {
-        const data = snapshot.val();
-        const container = document.getElementById('supportTicketsContainer');
+    function loadFinancialRequests() {
+      db.ref('requests').on('value', snap => {
+        const data = snap.val();
+        const container = document.getElementById('financialRequestsContainer');
         container.innerHTML = '';
-        let openCount = 0;
+        let reqCount = 0;
 
         if (data) {
           Object.keys(data).forEach(id => {
-            const t = data[id];
-            if (t.status === 'OPEN') openCount++;
-            const div = document.createElement('div');
-            div.className = "bg-zinc-800 p-4 rounded space-y-2 border border-zinc-700";
-            div.innerHTML = `
-              <div class="flex justify-between text-xs text-zinc-400">
-                <span>İstifadəçi: <strong>${t.username}</strong> | Mövzu: <strong>${t.topic}</strong></span>
-                <span>Status: ${t.status}</span>
-              </div>
-              <p class="text-sm text-zinc-200">${t.message}</p>
-              <div class="flex space-x-2 pt-2">
-                <input type="text" id="replyInput_${id}" placeholder="Cavabınız..." class="bg-zinc-900 border border-zinc-700 p-2 text-xs rounded w-full text-white">
-                <button onclick="replySupport('${id}')" class="bg-red-600 px-4 py-2 rounded text-xs font-bold">Göndər</button>
-              </div>
-            `;
-            container.appendChild(div);
+            const r = data[id];
+            if (r.status === 'PENDING') {
+              reqCount++;
+              const div = document.createElement('div');
+              div.className = "bg-zinc-800 p-3 rounded flex justify-between items-center text-xs";
+              div.innerHTML = `
+                <div>
+                  <span class="font-bold text-red-500">${r.type}</span> - <strong>${r.username}</strong>
+                  <p class="text-zinc-300">Məbləğ: ${r.amount} AZN | Qeyd/Kart: ${r.note || r.card}</p>
+                </div>
+                <button onclick="approveRequest('${id}', '${r.username}', '${r.type}', ${r.amount})" class="bg-green-600 px-3 py-1.5 rounded font-bold">İcra Et</button>
+              `;
+              container.appendChild(div);
+            }
           });
         }
-        document.getElementById('statOpenSupport').innerText = openCount;
+        document.getElementById('statRequests').innerText = reqCount;
       });
     }
 
-    function replySupport(id) {
-      const replyText = document.getElementById('replyInput_' + id).value;
-      if (replyText) {
-        db.ref('support_tickets/' + id).update({
-          reply: replyText,
-          status: 'RESOLVED'
-        });
-      }
+    function approveRequest(reqId, username, type, amount) {
+      db.ref('users/' + username).once('value', snap => {
+        const u = snap.val();
+        let newBal = u.balance || 0;
+
+        if (type === 'DEPOSIT') newBal += amount;
+        if (type === 'WITHDRAW') newBal -= amount;
+
+        db.ref('users/' + username).update({ balance: newBal });
+        db.ref('requests/' + reqId).update({ status: 'APPROVED' });
+      });
     }
   </script>
 </body>
