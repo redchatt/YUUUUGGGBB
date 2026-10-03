@@ -1,527 +1,1395 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elan Saytı - Balans və Elan Yerləşdirmə</title>
-  <style>
-    :root {
-      --bg-color: #0d0f12;
-      --card-bg: #161b22;
-      --accent-color: #ff2a2a;
-      --text-color: #ffffff;
-      --subtext: #8b949e;
-      --border-color: #30363d;
-      --green-color: #238636;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GameBazar - Oyun Hesabları Platforması</title>
+    <!-- FontAwesome İkonları -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Particles.js Arxa Fon Animasiyası Üçün -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0b0e;
+            --card-bg: #14141c;
+            --card-border: #222230;
+            --primary: #ff003c;
+            --primary-hover: #d60032;
+            --text-main: #ffffff;
+            --text-muted: #8e8ea0;
+            --success: #00e676;
+            --warning: #ffb300;
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      min-height: 100vh;
-      position: relative;
-    }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
 
-    /* Arxa Fondakı Qırmızı Zərrəciklər (Particles Canvas) */
-    #bg-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-    }
+        /* Canvas Particle */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
 
-    .main-wrapper {
-      position: relative;
-      z-index: 1;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            padding-bottom: 80px;
+        }
 
-    /* Giriş və Qeydiyyat Pəncərəsi */
-    .auth-container {
-      background: rgba(22, 27, 34, 0.95);
-      border: 1px solid var(--accent-color);
-      box-shadow: 0 0 25px rgba(255, 42, 42, 0.3);
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: 60px auto;
-      text-align: center;
-    }
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0 20px 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 15px;
+        }
 
-    .auth-tabs {
-      display: flex;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .auth-tab-btn {
-      flex: 1;
-      padding: 10px;
-      background: #0d0f12;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      border-radius: 6px;
-      cursor: pointer;
-    }
+        .user-balance-badge {
+            background: rgba(255, 0, 60, 0.1);
+            border: 1px solid var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .auth-tab-btn.active {
-      background: var(--accent-color);
-      border-color: var(--accent-color);
-    }
+        /* AUTH FORMS */
+        .auth-card {
+            background: rgba(20, 20, 28, 0.95);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
 
-    .auth-form {
-      display: none;
-    }
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+        }
 
-    .auth-form.active {
-      display: block;
-    }
+        .auth-tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: bold;
+            padding: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
 
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      background: #0d0f12;
-      border: 1px solid var(--border-color);
-      color: white;
-      border-radius: 6px;
-      outline: none;
-    }
+        .auth-tab-btn.active {
+            color: var(--primary);
+        }
 
-    .btn {
-      background: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 100%;
-      margin-top: 10px;
-      transition: 0.3s;
-    }
+        .auth-tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            border-radius: 3px;
+        }
 
-    .btn:hover {
-      background: #e02222;
-    }
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
 
-    /* Naviqasiya Menyusu */
-    .app-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--card-bg);
-      padding: 15px 20px;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-      margin-bottom: 20px;
-    }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
 
-    .nav-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
+        .phone-input-group {
+            display: flex;
+            gap: 8px;
+        }
 
-    .tab-btn {
-      flex: 1;
-      padding: 12px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
+        .phone-select {
+            background: #1a1a26;
+            border: 1px solid var(--card-border);
+            color: var(--primary);
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            outline: none;
+            width: 90px;
+        }
 
-    .tab-btn.active {
-      background: var(--accent-color);
-      border-color: var(--accent-color);
-    }
+        .input-field {
+            width: 100%;
+            background: #1a1a26;
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
 
-    .section-content {
-      display: none;
-      background: var(--card-bg);
-      padding: 25px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-    }
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(255, 0, 60, 0.3);
+        }
 
-    .section-content.active {
-      display: block;
-    }
+        .password-wrapper {
+            position: relative;
+        }
 
-    /* Elanlar Siyahısı */
-    .announcements-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
+        .eye-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
 
-    .announcement-card {
-      background: #0d0f12;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 15px;
-      transition: 0.3s;
-    }
+        .btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 0, 60, 0.4);
+            margin-top: 10px;
+        }
 
-    .announcement-card:hover {
-      border-color: var(--accent-color);
-      transform: translateY(-4px);
-    }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
 
-    .promo-badge {
-      background: var(--green-color);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 13px;
-      display: inline-block;
-      margin-bottom: 15px;
-    }
+        .info-section {
+            margin-top: 25px;
+            background: rgba(20, 20, 28, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
 
-    /* Modal (Ödəniş Pəncərəsi) */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-    }
+        .info-section h4 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .modal-content {
-      background: var(--card-bg);
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 450px;
-      width: 90%;
-      border: 1px solid var(--accent-color);
-    }
+        /* NAVIGATION TABS */
+        .nav-tabs {
+            display: flex;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            position: relative;
+        }
 
-    .card-box {
-      background: #0d0f12;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px dashed var(--accent-color);
-      margin: 15px 0;
-    }
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-muted);
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.3s;
+            z-index: 1;
+        }
 
-    .close-btn {
-      float: right;
-      font-size: 22px;
-      cursor: pointer;
-      color: var(--subtext);
-    }
-  </style>
+        .nav-tab.active {
+            color: #fff;
+            background: var(--primary);
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
+        }
+
+        /* GAME CARDS (ANIMATED) */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover, .game-card.selected {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(255, 0, 60, 0.3);
+        }
+
+        .game-card i {
+            font-size: 28px;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .game-card span {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* ADS LISTING */
+        .ad-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 12px;
+            position: relative;
+        }
+
+        .ad-img {
+            width: 85px;
+            height: 85px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #222;
+        }
+
+        .ad-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .ad-title {
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        .ad-seller {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .verified-badge {
+            color: #00b0ff;
+            font-size: 12px;
+        }
+
+        .ad-price {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .btn-buy {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-end;
+        }
+
+        /* MODAL WINDOWS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        /* CUSTOM ALERT MODAL */
+        #customAlertModal .modal-content {
+            text-align: center;
+        }
+
+        #customAlertText {
+            margin: 15px 0;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        /* SUB-TABS FOR FINANCE */
+        .sub-tab-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .sub-tab {
+            flex: 1;
+            padding: 8px;
+            background: #1a1a26;
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .sub-tab.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(255, 0, 60, 0.1);
+        }
+
+        /* BOTTOM NAVBAR */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 500px;
+            background: rgba(20, 20, 28, 0.95);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 11px;
+            gap: 4px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary);
+        }
+
+        .bottom-nav-item i {
+            font-size: 18px;
+        }
+
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
 
-  <!-- Arxa fonda Qırmızı Zərrəciklər (Particles) -->
-  <canvas id="bg-canvas"></canvas>
+    <div id="particles-js"></div>
 
-  <div class="main-wrapper">
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-gamepad"></i> GameBazar
+            </div>
+            <div id="userBalanceBox" class="user-balance-badge hidden">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="headerBalance">0.00</span> AZN
+            </div>
+        </header>
 
-    <!-- 1. GİRİŞ VƏ QEYDİYYAT (ZƏRRƏCİKLİ FON İLƏ) -->
-    <div id="auth-box" class="auth-container">
-      <div class="auth-tabs">
-        <button class="auth-tab-btn active" onclick="switchAuth('login')">Daxil Ol</button>
-        <button class="auth-tab-btn" onclick="switchAuth('register')">Qeydiyyat</button>
-      </div>
+        <!-- AUTH FORM (GİRİŞ & QEYDİYYAT) -->
+        <div id="authSection" class="auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" onclick="switchAuthMode('login')">Giriş</button>
+                <button class="auth-tab-btn" onclick="switchAuthMode('register')">Qeydiyyat</button>
+            </div>
 
-      <!-- Giriş Formu -->
-      <form id="login-form" class="auth-form active" onsubmit="event.preventDefault(); startApp();">
-        <h2>Sistemə Giriş</h2>
-        <input type="text" class="input-field" placeholder="İstifadəçi adı və ya Mobil nömrə" required>
-        <input type="password" class="input-field" placeholder="Şifrə" required>
-        <button type="submit" class="btn">Giriş Et</button>
-      </form>
+            <!-- GİRİŞ FORMASI -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Mobil Nömrə</label>
+                    <div class="phone-input-group">
+                        <select id="loginPrefix" class="phone-select">
+                            <option value="070">070</option>
+                            <option value="055">055</option>
+                            <option value="051">051</option>
+                            <option value="077">077</option>
+                            <option value="010">010</option>
+                            <option value="099">099</option>
+                            <option value="050">050</option>
+                        </select>
+                        <input type="text" id="loginPhone" class="input-field" maxlength="9" oninput="formatPhoneNumber(this)" required>
+                    </div>
+                </div>
 
-      <!-- Qeydiyyat Formu -->
-      <form id="register-form" class="auth-form" onsubmit="event.preventDefault(); startApp();">
-        <h2>Yeni Qeydiyyat</h2>
-        <input type="text" class="input-field" placeholder="Ad və Soyad" required>
-        <input type="text" class="input-field" placeholder="Mobil Nömrə" required>
-        <input type="password" class="input-field" placeholder="Şifrə Təyin Edin" required>
-        <button type="submit" class="btn">Hesab Yarat</button>
-      </form>
+                <div class="form-group">
+                    <label>Şifrə</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="loginPassword" class="input-field" required>
+                        <i class="fa-solid fa-eye eye-icon" onclick="togglePasswordVisibility('loginPassword', this)"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Daxil Ol</button>
+            </form>
+
+            <!-- QEYDİYYAT FORMASI -->
+            <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Ad və Soyad</label>
+                    <input type="text" id="regFullName" class="input-field" required>
+                </div>
+
+                <div class="form-group">
+                    <label>İstifadəçi Adı (@username)</label>
+                    <input type="text" id="regUsername" class="input-field" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Mobil Nömrə</label>
+                    <div class="phone-input-group">
+                        <select id="regPrefix" class="phone-select">
+                            <option value="070">070</option>
+                            <option value="055">055</option>
+                            <option value="051">051</option>
+                            <option value="077">077</option>
+                            <option value="010">010</option>
+                            <option value="099">099</option>
+                            <option value="050">050</option>
+                        </select>
+                        <input type="text" id="regPhone" class="input-field" maxlength="9" oninput="formatPhoneNumber(this)" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Şifrə</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="regPassword" class="input-field" required>
+                        <i class="fa-solid fa-eye eye-icon" onclick="togglePasswordVisibility('regPassword', this)"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Şifrə Təkrarı</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="regPasswordConfirm" class="input-field" required>
+                        <i class="fa-solid fa-eye eye-icon" onclick="togglePasswordVisibility('regPasswordConfirm', this)"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Qeydiyyatı Tamamla</button>
+            </form>
+
+            <!-- QAYDALAR VƏ TƏHLÜKƏSİZLİK MƏTNİ -->
+            <div class="info-section">
+                <h4><i class="fa-solid fa-shield-halved"></i> Təhlükəsiz Alış-Veriş Bələdçisi</h4>
+                <p>GameBazar platformasında bütün əməliyyatlar <b>Dondurulmuş Balans (Escrow)</b> sistemi ilə qorunur. Hesab aldıqda məbləğ satıcıya dərhal keçmir. Siz hesabı tam yoxlayıb təsdiqlədikdən sonra ödəniş satıcının balansına köçürülür. Fırıldaqçılıq hallarından qorunmaq üçün şəxsi əlaqə vasitələrini paylaşmayın!</p>
+            </div>
+        </div>
+
+        <!-- APPLİKASİYA ƏSAS BÖLMƏSİ (LOGİNDƏN SONRA) -->
+        <div id="appSection" class="hidden">
+            <!-- TAB SEÇİMİ -->
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchMainTab('adsTab', this)">Elanlar</button>
+                <button class="nav-tab" onclick="switchMainTab('addAdTab', this)">Elan Əlavə Et</button>
+            </div>
+
+            <!-- 1. ELANLAR TABI -->
+            <div id="adsTab">
+                <!-- OYUN FİLTRLƏRİ (ANIMASİYALI KARTLAR) -->
+                <div class="games-grid">
+                    <div class="game-card selected" onclick="filterByGame('all', this)">
+                        <i class="fa-solid fa-border-all"></i>
+                        <span>Bütün Oyunlar</span>
+                    </div>
+                    <div class="game-card" onclick="filterByGame('pubg', this)">
+                        <i class="fa-solid fa-crosshairs"></i>
+                        <span>PUBG Mobile</span>
+                    </div>
+                    <div class="game-card" onclick="filterByGame('pes', this)">
+                        <i class="fa-solid fa-futbol"></i>
+                        <span>eFootball (PES)</span>
+                    </div>
+                    <div class="game-card" onclick="filterByGame('coc', this)">
+                        <i class="fa-solid fa-shield-cat"></i>
+                        <span>Clash of Clans</span>
+                    </div>
+                    <div class="game-card" onclick="filterByGame('hayday', this)">
+                        <i class="fa-solid fa-wheat-awn"></i>
+                        <span>Hay Day</span>
+                    </div>
+                </div>
+
+                <!-- ELANLAR SİYAHISI -->
+                <div id="adsListContainer">
+                    <!-- Dinamik yüklənəcək -->
+                </div>
+            </div>
+
+            <!-- 2. ELAN ƏLAVƏ ET TABI -->
+            <div id="addAdTab" class="hidden">
+                <div class="auth-card" style="margin-top:0;">
+                    <h3 class="modal-title">Yeni Elan Yerləşdir</h3>
+                    <form onsubmit="handleCreateAd(event)">
+                        <div class="form-group">
+                            <label>Oyun Seçin</label>
+                            <select id="adGameSelect" class="input-field" required>
+                                <option value="pubg">PUBG Mobile</option>
+                                <option value="pes">eFootball (PES Mobile)</option>
+                                <option value="coc">Clash of Clans</option>
+                                <option value="hayday">Hay Day</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Elan Başlığı</label>
+                            <input type="text" id="adTitle" class="input-field" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ətraflı Məlumat</label>
+                            <textarea id="adDescription" class="input-field" rows="4" style="resize:none;" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Qiymət (AZN)</label>
+                            <input type="number" id="adPrice" class="input-field" min="1" step="0.5" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Şəkil Yüklə (Qalereyadan)</label>
+                            <input type="file" id="adImageInput" class="input-field" accept="image/*" required>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Elanı Təsdiqə Göndər</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 2. ƏSAS ELAN SAYTI PANELİ -->
-    <div id="app-content" style="display: none;">
-      
-      <header class="app-header">
-        <h2>📌 Elan Portalı</h2>
-        <div>Balans: <strong id="user-balance" style="color: #3fb950;">0.00 AZN</strong></div>
-      </header>
-
-      <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('announcements')">📢 Elanlar</button>
-        <button class="tab-btn" onclick="switchTab('deposit')">💳 Depozit (Balans Artır)</button>
-        <button class="tab-btn" onclick="switchTab('withdraw')">💸 Çıxarış</button>
-        <button class="tab-btn" onclick="switchTab('admin')">⚙️ Admin Panel</button>
-      </div>
-
-      <!-- A) ELANLAR BÖLMƏSİ -->
-      <div id="announcements-tab" class="section-content active">
-        <h3>Bütün Elanlar</h3>
-        <div class="announcements-grid">
-          <div class="announcement-card">
-            <h4>📱 iPhone 13 Pro</h4>
-            <p style="color: var(--accent-color); font-weight: bold; margin: 8px 0;">1250 AZN</p>
-            <p style="color: var(--subtext); font-size: 13px;">Əla vəziyyətdədir, çatı yoxdur.</p>
-          </div>
-          <div class="announcement-card">
-            <h4>🚗 Hyundai Elantra (2018)</h4>
-            <p style="color: var(--accent-color); font-weight: bold; margin: 8px 0;">21500 AZN</p>
-            <p style="color: var(--subtext); font-size: 13px;">Orijinal yürüş, rəng dəyməyib.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- B) DEPOZİT BÖLMƏSİ (AYRI) -->
-      <div id="deposit-tab" class="section-content">
-        <h3>Balansı Artır</h3>
-        <p style="color: var(--subtext); margin-top: 5px;">Depozit seçin:</p>
-        
-        <div style="margin: 20px 0;">
-          <label style="display: block; margin-bottom: 8px;">Məbləğ Seçin:</label>
-          <select id="deposit-amount-select" class="input-field">
-            <option value="1">1 AZN (Minimum)</option>
-            <option value="5">5 AZN</option>
-            <option value="10">10 AZN</option>
-            <option value="50">50 AZN</option>
-          </select>
-        </div>
-
-        <button class="btn" onclick="openPaymentModal()">Ödənişə Keç</button>
-      </div>
-
-      <!-- C) ÇIXARIŞ BÖLMƏSİ (AYRI, m10 & BANK) -->
-      <div id="withdraw-tab" class="section-content">
-        <span class="promo-badge">🎉 Açılışa Özəl: 0% Komissiya!</span>
-        <h3>Qazancı / Balansı Çıxar</h3>
-        
-        <div style="margin-top: 15px;">
-          <label>Çıxarış Üsulu:</label>
-          <select id="withdraw-method" class="input-field" onchange="toggleWithdrawInput()">
-            <option value="m10">m10</option>
-            <option value="bank">Bank Kartı</option>
-          </select>
-        </div>
-
-        <div id="m10-input-box" style="margin-top: 10px;">
-          <label>Mobil Nömrə (m10):</label>
-          <input type="text" class="input-field" placeholder="+994 XX XXX XX XX">
-        </div>
-
-        <div id="bank-input-box" style="margin-top: 10px; display: none;">
-          <label>Bank Kartı Nömrəsi:</label>
-          <input type="text" class="input-field" placeholder="16 rəqəmli kart nömrəsi">
-        </div>
-
-        <div style="margin-top: 10px;">
-          <label>Məbləğ (AZN):</label>
-          <input type="number" class="input-field" min="1" placeholder="Məbləğ daxil edin">
-        </div>
-
-        <button class="btn" onclick="alert('Çıxarış sorğusu göndərildi!')">Çıxarış Et</button>
-      </div>
-
-      <!-- D) ADMİN PANEL (KART ƏLAVƏ ET / SİL) -->
-      <div id="admin-tab" class="section-content">
-        <h3>⚙️ Admin Panel - Kart İdarəetməsi</h3>
-        <p style="color: var(--subtext); font-size: 14px;">Depozit üçün kart məlumatlarını tənzimləyin:</p>
-
-        <div style="margin-top: 15px;">
-          <input type="text" id="new-card-input" class="input-field" placeholder="Kart nömrəsi və ya Rekvizit yazın">
-          <button class="btn" style="background: var(--green-color);" onclick="addAdminCard()">+ Kartı Əlavə Et</button>
-        </div>
-
-        <h4 style="margin-top: 25px;">Sistemdəki Kartlar:</h4>
-        <div id="admin-cards-list" style="margin-top: 10px;"></div>
-      </div>
-
+    <!-- ALT NAVİQASİYA (FOOTER BAR) -->
+    <div id="bottomNav" class="bottom-nav hidden">
+        <button class="bottom-nav-item active" onclick="switchBottomNav('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Əsas</span>
+        </button>
+        <button class="bottom-nav-item" onclick="openFinanceModal()">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Balans</span>
+        </button>
+        <button class="bottom-nav-item" onclick="openSupportModal()">
+            <i class="fa-solid fa-headset"></i>
+            <span>Dəstək</span>
+        </button>
+        <button class="bottom-nav-item" onclick="openMyOrdersModal()">
+            <i class="fa-solid fa-box-open"></i>
+            <span>Sifarişlərim</span>
+        </button>
+        <button class="bottom-nav-item" onclick="handleLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Çıxış</span>
+        </button>
     </div>
-  </div>
 
-  <!-- ÖDƏNİŞ SƏHİFƏSİ / MODAL VƏ ÇEK YÜKLƏMƏ -->
-  <div id="payment-modal" class="modal-overlay">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closePaymentModal()">&times;</span>
-      <h3>Depozit Ödənişi</h3>
-      <p style="color: var(--subtext); margin-top: 10px;">Seçilmiş məbləğ: <strong id="modal-amount-display">1</strong> AZN</p>
+    <!-- DEPOZİT VƏ ÇIXARIŞ MODALI -->
+    <div id="financeModal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark modal-close" onclick="closeModal('financeModal')"></i>
+            <h3 class="modal-title">Maliyyə Əməliyyatları</h3>
 
-      <div class="card-box">
-        <p style="font-size: 12px; color: var(--subtext);">Ödəniş ediləcək kart:</p>
-        <p id="active-card-text" style="font-size: 16px; color: #4ba3e3; font-weight: bold; margin-top: 5px;">Kart əlavə edilməyib</p>
-      </div>
+            <div class="sub-tab-group">
+                <button id="depositTabBtn" class="sub-tab active" onclick="switchFinanceTab('deposit')">Depozit Et</button>
+                <button id="withdrawTabBtn" class="sub-tab" onclick="switchFinanceTab('withdraw')">Çıxarış Et</button>
+            </div>
 
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-size: 13px; margin-bottom: 5px;">Ödəniş Çekinin Şəkli (Məcburi):</label>
-        <input type="file" id="receipt-input" accept="image/*" class="input-field">
-      </div>
+            <!-- DEPOZİT BÖLMƏSİ -->
+            <div id="depositSection">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Minimum depozit məbləği: <b>1 AZN</b></p>
+                <div class="form-group">
+                    <label>Məbləğ (AZN)</label>
+                    <input type="number" id="depositAmount" class="input-field" min="1" value="1">
+                </div>
+                <button class="btn-primary" onclick="proceedToPayment()">Ödənişə Keç</button>
+            </div>
 
-      <button class="btn" onclick="submitDepositReceipt()">Ödənişi Təsdiqlə</button>
+            <!-- ÖDƏNİŞ TƏSDİQ BÖLMƏSİ (KART VƏ QƏBZ YÜKLƏMƏ) -->
+            <div id="paymentDetailsSection" class="hidden">
+                <div style="background:#1a1a26; padding:12px; border-radius:8px; margin-bottom:12px; border:1px solid var(--card-border);">
+                    <p style="font-size:12px; color:var(--text-muted);">Aşağıdakı karta ödəniş edin:</p>
+                    <h4 id="adminCardDisplay" style="color:var(--primary); font-size:16px; margin:5px 0;">----------------</h4>
+                    <p id="adminCardNameDisplay" style="font-size:12px; color:#fff;"></p>
+                </div>
+                <div class="form-group">
+                    <label>Ödəniş Qəbzinin Şəkli (Screenshot)</label>
+                    <input type="file" id="depositReceiptInput" class="input-field" accept="image/*">
+                </div>
+                <button class="btn-primary" onclick="submitDepositRequest()">Ödənişi Göndər</button>
+            </div>
+
+            <!-- ÇIXARIŞ BÖLMƏSİ -->
+            <div id="withdrawSection" class="hidden">
+                <div style="background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); padding: 8px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
+                    <span style="font-size: 11px; color: var(--success); font-weight: bold;"><i class="fa-solid fa-bolt"></i> Açılışa özəl 0% Komissiya!</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Minimum çıxarış məbləği: <b>5 AZN</b></p>
+                
+                <div class="form-group">
+                    <label>Çıxarış Üsulu</label>
+                    <select id="withdrawMethod" class="input-field" onchange="toggleWithdrawMethodFields()">
+                        <option value="m10">m10</option>
+                        <option value="bank">Bank Kartı</option>
+                    </select>
+                </div>
+
+                <div id="m10Field" class="form-group">
+                    <label>m10 Mobil Nömrəsi</label>
+                    <input type="text" id="withdrawM10Phone" class="input-field" placeholder="050XXXXXXX">
+                </div>
+
+                <div id="bankField" class="form-group hidden">
+                    <label>Bank Kart Nömrəsi (16 rəqəm)</label>
+                    <input type="text" id="withdrawCardNumber" class="input-field" placeholder="4127 XXXX XXXX XXXX" maxlength="16">
+                </div>
+
+                <div class="form-group">
+                    <label>Məbləğ (AZN)</label>
+                    <input type="number" id="withdrawAmount" class="input-field" min="5" value="5">
+                </div>
+
+                <button class="btn-primary" onclick="submitWithdrawRequest()">Çıxarış Sorğusu Göndər</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // --- 1. QIRMIZI ZƏRRƏCİKLƏR (PARTICLES) ANIMASİYASI ---
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
+    <!-- DƏSTƏK VƏ ŞİKAYƏT MODALI -->
+    <div id="supportModal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark modal-close" onclick="closeModal('supportModal')"></i>
+            <h3 class="modal-title">Dəstək və Şikayət</h3>
+            <form onsubmit="handleSupportSubmit(event)">
+                <div class="form-group">
+                    <label>Mövzu</label>
+                    <select id="supportTopic" class="input-field" required>
+                        <option value="satici_sikayet">Satıcı haqqında şikayət</option>
+                        <option value="depozit_cixaris">Depozit / Çıxarış problemi</option>
+                        <option value="diger">Digər məsələ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mesajınız</label>
+                    <textarea id="supportMessage" class="input-field" rows="4" style="resize:none;" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Göndər</button>
+            </form>
+        </div>
+    </div>
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    <!-- SİFARİŞLƏRİM (ESCROW / ALINANLAR) MODALI -->
+    <div id="myOrdersModal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark modal-close" onclick="closeModal('myOrdersModal')"></i>
+            <h3 class="modal-title">Dondurulmuş Əməliyyatlarım</h3>
+            <div id="myOrdersList">
+                <!-- Dinamik -->
+            </div>
+        </div>
+    </div>
 
-    const particles = [];
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 2.5 + 1,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        alpha: Math.random()
-      });
-    }
+    <!-- XÜSUSİ ALERT MODAL (GITHUB BİLDİRİŞLƏRİ ƏVƏZİNƏ) -->
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-circle-info" style="font-size:35px; color:var(--primary); margin-bottom:10px;"></i>
+            <p id="customAlertText"></p>
+            <button class="btn-primary" onclick="closeModal('customAlertModal')">Tamam</button>
+        </div>
+    </div>
 
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
+    <script>
+        // FIREBASE İNİSİALİZASİYASI
+        const firebaseConfig = {
+            databaseURL: "https://gamebazar-8fc97-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        // CACHE SİSTEMİ
+        let currentUser = JSON.parse(localStorage.getItem('gb_user')) || null;
+        let selectedGameFilter = 'all';
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 42, 42, ${p.alpha})`;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#ff2a2a';
-        ctx.fill();
-      });
-      requestAnimationFrame(animateParticles);
-    }
-    animateParticles();
+        // PARTICLES ANIMATION
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 45, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ff003c" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.4, "random": true },
+                "size": { "value": 3, "random": true },
+                "line_linked": { "enable": true, "distance": 130, "color": "#ff003c", "opacity": 0.2, "width": 1 },
+                "move": { "enable": true, "speed": 1.5, "direction": "none", "out_mode": "out" }
+            },
+            "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false } } },
+            "retina_detect": true
+        });
 
-    // --- 2. GİRİŞ VƏ QEYDİYYAT KEÇİDİ ---
-    function switchAuth(type) {
-      document.querySelectorAll('.auth-tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        // TƏTBİQ BAŞLAYANDA
+        window.onload = function() {
+            if (currentUser) {
+                showAppUI();
+                listenUserData();
+            }
+            loadAds();
+        };
 
-      if (type === 'login') {
-        event.target.classList.add('active');
-        document.getElementById('login-form').classList.add('active');
-      } else {
-        event.target.classList.add('active');
-        document.getElementById('register-form').classList.add('active');
-      }
-    }
+        // CUSTOM ALERT
+        function showAlert(msg) {
+            document.getElementById('customAlertText').innerText = msg;
+            document.getElementById('customAlertModal').style.display = 'flex';
+        }
 
-    function startApp() {
-      document.getElementById('auth-box').style.display = 'none';
-      document.getElementById('app-content').style.display = 'block';
-    }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
 
-    // --- 3. TABLAR ARASI KEÇİD ---
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+        // NÖMRƏ FORMATLAMA (3 2 2 DÜZƏLİŞİ)
+        function formatPhoneNumber(input) {
+            let val = input.value.replace(/\D/g, '');
+            if (val.length > 7) val = val.substring(0, 7);
+            
+            let formatted = '';
+            if (val.length > 0) formatted += val.substring(0, 3);
+            if (val.length > 3) formatted += ' ' + val.substring(3, 5);
+            if (val.length > 5) formatted += ' ' + val.substring(5, 7);
+            
+            input.value = formatted;
+        }
 
-      document.getElementById(tabId + '-tab').classList.add('active');
-      event.target.classList.add('active');
-    }
+        // GÖZ İKONU İLƏ ŞİFRƏ GÖSTƏRMƏ
+        function togglePasswordVisibility(fieldId, icon) {
+            const field = document.getElementById(fieldId);
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
 
-    function toggleWithdrawInput() {
-      const val = document.getElementById('withdraw-method').value;
-      document.getElementById('m10-input-box').style.display = val === 'm10' ? 'block' : 'none';
-      document.getElementById('bank-input-box').style.display = val === 'bank' ? 'block' : 'none';
-    }
+        // TAB VƏ REJİM DƏYİŞMƏLƏRİ
+        function switchAuthMode(mode) {
+            const tabBtns = document.querySelectorAll('.auth-tab-btn');
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+            if (mode === 'login') {
+                tabBtns[0].classList.add('active');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+            } else {
+                tabBtns[1].classList.add('active');
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+            }
+        }
 
-    // --- 4. ADMİN PANEL VƏ KART İDARƏETMƏSİ ---
-    let adminCards = ["4127 8888 9999 1234 (Kapital Bank)"];
+        function switchMainTab(tabId, el) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            
+            document.getElementById('adsTab').classList.add('hidden');
+            document.getElementById('addAdTab').classList.add('hidden');
+            document.getElementById(tabId).classList.remove('hidden');
+        }
 
-    function renderAdminCards() {
-      const container = document.getElementById('admin-cards-list');
-      const activeCardText = document.getElementById('active-card-text');
-      container.innerHTML = '';
+        // QEYDİYYAT İŞLƏMİ
+        function handleRegister(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const username = document.getElementById('regUsername').value.trim().replace('@', '');
+            const prefix = document.getElementById('regPrefix').value;
+            const rawPhone = document.getElementById('regPhone').value.replace(/\s+/g, '');
+            const password = document.getElementById('regPassword').value;
+            const passwordConfirm = document.getElementById('regPasswordConfirm').value;
 
-      if (adminCards.length === 0) {
-        container.innerHTML = '<p style="color:var(--subtext)">Kart yoxdur.</p>';
-        activeCardText.innerText = "Admin tərəfindən kart əlavə edilməyib";
-        return;
-      }
+            if (rawPhone.length !== 7) {
+                showAlert("Nömrə tam olaraq 7 rəqəm olmalıdır!");
+                return;
+            }
+            if (password !== passwordConfirm) {
+                showAlert("Şifrələr üst-üstə düşmür!");
+                return;
+            }
 
-      activeCardText.innerText = adminCards[0];
+            const phoneKey = prefix + rawPhone;
 
-      adminCards.forEach((card, idx) => {
-        const item = document.createElement('div');
-        item.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#0d0f12; padding:10px; margin-top:8px; border-radius:6px; border:1px solid #30363d;";
-        item.innerHTML = `
-          <span>💳 ${card}</span>
-          <button style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;" onclick="deleteAdminCard(${idx})">Sil</button>
-        `;
-        container.appendChild(item);
-      });
-    }
+            db.ref('users/' + phoneKey).once('value', snapshot => {
+                if (snapshot.exists()) {
+                    showAlert("Bu telefon nömrəsi ilə artıq qeydiyyatdan keçilib!");
+                } else {
+                    const userData = {
+                        fullName: fullName,
+                        username: username,
+                        phone: phoneKey,
+                        password: password,
+                        balance: 0,
+                        isVerified: false,
+                        createdAt: Date.now()
+                    };
+                    db.ref('users/' + phoneKey).set(userData, err => {
+                        if (!err) {
+                            currentUser = userData;
+                            localStorage.setItem('gb_user', JSON.stringify(userData));
+                            showAlert("Qeydiyyat uğurla tamamlandı!");
+                            showAppUI();
+                            listenUserData();
+                        } else {
+                            showAlert("Xəta baş verdi, yenidən cəhd edin.");
+                        }
+                    });
+                }
+            });
+        }
 
-    function addAdminCard() {
-      const val = document.getElementById('new-card-input').value.trim();
-      if (val !== '') {
-        adminCards.push(val);
-        document.getElementById('new-card-input').value = '';
-        renderAdminCards();
-      }
-    }
+        // GİRİŞ İŞLƏMİ
+        function handleLogin(e) {
+            e.preventDefault();
+            const prefix = document.getElementById('loginPrefix').value;
+            const rawPhone = document.getElementById('loginPhone').value.replace(/\s+/g, '');
+            const password = document.getElementById('loginPassword').value;
 
-    function deleteAdminCard(idx) {
-      adminCards.splice(idx, 1);
-      renderAdminCards();
-    }
+            const phoneKey = prefix + rawPhone;
 
-    renderAdminCards();
+            db.ref('users/' + phoneKey).once('value', snapshot => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.password === password) {
+                        currentUser = data;
+                        localStorage.setItem('gb_user', JSON.stringify(data));
+                        showAppUI();
+                        listenUserData();
+                    } else {
+                        showAlert("Məlumatlar yanlışdır!");
+                    }
+                } else {
+                    showAlert("İstifadəçi tapılmadı!");
+                }
+            });
+        }
 
-    // --- 5. ÖDƏNİŞ VƏ ÇEK YÜKLƏMƏ ---
-    function openPaymentModal() {
-      const amt = document.getElementById('deposit-amount-select').value;
-      document.getElementById('modal-amount-display').innerText = amt;
-      document.getElementById('payment-modal').style.display = 'flex';
-    }
+        function showAppUI() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            document.getElementById('userBalanceBox').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
+        }
 
-    function closePaymentModal() {
-      document.getElementById('payment-modal').style.display = 'none';
-    }
+        function handleLogout() {
+            localStorage.removeItem('gb_user');
+            currentUser = null;
+            location.reload();
+        }
 
-    function submitDepositReceipt() {
-      const fileInput = document.getElementById('receipt-input');
-      if (fileInput.files.length === 0) {
-        alert('Lütfən ödəniş çekinin şəklini əlavə edin!');
-        return;
-      }
-      alert('Çek göndərildi! Admin tərəfindən təsdiqləndikdən sonra balansınıza əlavə olunacaq.');
-      closePaymentModal();
-    }
-  </script>
+        // BALANS DİNAMİK NƏZARƏTİ
+        function listenUserData() {
+            if (!currentUser) return;
+            db.ref('users/' + currentUser.phone).on('value', snapshot => {
+                if (snapshot.exists()) {
+                    currentUser = snapshot.val();
+                    localStorage.setItem('gb_user', JSON.stringify(currentUser));
+                    document.getElementById('headerBalance').innerText = parseFloat(currentUser.balance).toFixed(2);
+                }
+            });
+        }
+
+        // ELAN ƏLAVƏ ETMƏK (BASE64 İLƏ ŞƏKİL YÜKLƏMƏ)
+        function handleCreateAd(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const game = document.getElementById('adGameSelect').value;
+            const title = document.getElementById('adTitle').value.trim();
+            const desc = document.getElementById('adDescription').value.trim();
+            const price = parseFloat(document.getElementById('adPrice').value);
+            const fileInput = document.getElementById('adImageInput');
+
+            if (fileInput.files.length === 0) {
+                showAlert("Xahiş olunur şəkil seçin!");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const imgBase64 = evt.target.result;
+                const newAdRef = db.ref('ads').push();
+                
+                const adData = {
+                    id: newAdRef.key,
+                    game: game,
+                    title: title,
+                    description: desc,
+                    price: price,
+                    image: imgBase64,
+                    sellerPhone: currentUser.phone,
+                    sellerName: currentUser.fullName,
+                    sellerUsername: currentUser.username,
+                    status: 'pending', // admin yoxlaması
+                    createdAt: Date.now()
+                };
+
+                newAdRef.set(adData, err => {
+                    if (!err) {
+                        showAlert("Elanınız təsdiq üçün adminə göndərildi!");
+                        e.target.reset();
+                        switchMainTab('adsTab', document.querySelectorAll('.nav-tab')[0]);
+                    }
+                });
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        // ELANLARI YÜKLƏMƏK VƏ FİLTRLƏMƏK
+        function filterByGame(game, card) {
+            document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedGameFilter = game;
+            loadAds();
+        }
+
+        function loadAds() {
+            db.ref('ads').on('value', snapshot => {
+                const container = document.getElementById('adsListContainer');
+                container.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">Hələ ki elan yoxdur.</p>';
+                    return;
+                }
+
+                const ads = snapshot.val();
+                let hasItem = false;
+
+                for (let key in ads) {
+                    const ad = ads[key];
+                    if (ad.status === 'approved') {
+                        if (selectedGameFilter === 'all' || ad.game === selectedGameFilter) {
+                            hasItem = true;
+                            
+                            // Təsdiqlənmiş profil badge-i üçün yoxlanış
+                            let sellerVerifiedHtml = '';
+                            
+                            const adCard = document.createElement('div');
+                            adCard.className = 'ad-item';
+                            adCard.innerHTML = `
+                                <img src="${ad.image}" class="ad-img" alt="Ad">
+                                <div class="ad-details">
+                                    <div>
+                                        <div class="ad-title">${escapeHtml(ad.title)}</div>
+                                        <div class="ad-seller">
+                                            @${escapeHtml(ad.sellerUsername)}
+                                            <span id="ver_${ad.id}"></span>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; justify-shadow:space-between; align-items:center; margin-top:8px;">
+                                        <div class="ad-price">${ad.price} AZN</div>
+                                        <button class="btn-buy" onclick="buyAd('${ad.id}', ${ad.price}, '${ad.sellerPhone}')">Al</button>
+                                    </div>
+                                </div>
+                            `;
+                            container.appendChild(adCard);
+
+                            // Satıcının tətbiqdə verified statusunu yoxla
+                            db.ref('users/' + ad.sellerPhone + '/isVerified').once('value', vSnap => {
+                                if (vSnap.val() === true) {
+                                    const el = document.getElementById('ver_' + ad.id);
+                                    if(el) el.innerHTML = '<i class="fa-solid fa-circle-check verified-badge"></i>';
+                                }
+                            });
+                        }
+                    }
+                }
+
+                if (!hasItem) {
+                    container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">Bu kateqoriyada elan tapılmadı.</p>';
+                }
+            });
+        }
+
+        // TƏHLÜKƏSİZ ALIŞ-VERİŞ (ESCROW SYSTEM - DONDURULMUŞ BALANS)
+        function buyAd(adId, price, sellerPhone) {
+            if (!currentUser) {
+                showAlert("Lütfən əvvəlcə daxil olun!");
+                return;
+            }
+
+            if (currentUser.phone === sellerPhone) {
+                showAlert("Öz elanınızı ala bilməzsiniz!");
+                return;
+            }
+
+            if (currentUser.balance < price) {
+                showAlert("Balansınızda kifayət qədər vəsait yoxdur! Depozit edin.");
+                return;
+            }
+
+            if (confirm("Bu elanı almaq istədiyinizə əminsiniz? Məbləğ dondurulacaq.")) {
+                const newBalance = currentUser.balance - price;
+
+                // 1. Alıcının balansını yenilə
+                db.ref('users/' + currentUser.phone).update({ balance: newBalance });
+
+                // 2. Escrow (Dondurulmuş Əməliyyat) yaradılır
+                const orderRef = db.ref('escrow_orders').push();
+                const orderData = {
+                    orderId: orderRef.key,
+                    adId: adId,
+                    buyerPhone: currentUser.phone,
+                    sellerPhone: sellerPhone,
+                    amount: price,
+                    status: 'frozen', // dondurulub
+                    createdAt: Date.now()
+                };
+
+                orderRef.set(orderData, err => {
+                    if (!err) {
+                        // Elanı satıldı kimi qeyd et
+                        db.ref('ads/' + adId).update({ status: 'sold' });
+                        showAlert("Alış həyata keçirildi! Məbləğ donduruldu. Hesabı təhvil aldıqdan sonra 'Sifarişlərim' bölməsindən təsdiqləyin.");
+                    }
+                });
+            }
+        }
+
+        // SİFARİŞLƏRİM MODALI
+        function openMyOrdersModal() {
+            if (!currentUser) return;
+            document.getElementById('myOrdersModal').style.display = 'flex';
+
+            db.ref('escrow_orders').orderByChild('buyerPhone').equalTo(currentUser.phone).on('value', snapshot => {
+                const container = document.getElementById('myOrdersList');
+                container.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">Sifariş tapılmadı.</p>';
+                    return;
+                }
+
+                const orders = snapshot.val();
+                for (let k in orders) {
+                    const ord = orders[k];
+                    const div = document.createElement('div');
+                    div.style.cssText = "background:#1a1a26; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--card-border); font-size:12px;";
+                    
+                    let statusText = ord.status === 'frozen' ? '<span style="color:var(--warning);">Dondurulub</span>' : '<span style="color:var(--success);">Tamamlandı</span>';
+
+                    div.innerHTML = `
+                        <div><b>Sifariş ID:</b> ${ord.orderId}</div>
+                        <div><b>Məbləğ:</b> ${ord.amount} AZN</div>
+                        <div><b>Satıcı Nömrəsi:</b> ${ord.sellerPhone}</div>
+                        <div><b>Status:</b> ${statusText}</div>
+                        ${ord.status === 'frozen' ? `<button class="btn-primary" style="padding:6px; margin-top:8px;" onclick="confirmEscrowRelease('${ord.orderId}', ${ord.amount}, '${ord.sellerPhone}')">Təhvil Aldım (Pulu Satıcıya Köçür)</button>` : ''}
+                    `;
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        // ALICI HESABI TƏSDİQLƏYƏNDƏ PUL SATICIYA KÖÇÜR
+        function confirmEscrowRelease(orderId, amount, sellerPhone) {
+            if (confirm("Hesabı tam yoxladığınızı və təhvil aldığınızı təsdiq edirsiniz? Bu əməliyyat ləğv edilə bilməz.")) {
+                // Satıcının balansını tapıb artırmaq
+                db.ref('users/' + sellerPhone + '/balance').once('value', snap => {
+                    let currentBal = snap.val() || 0;
+                    db.ref('users/' + sellerPhone).update({ balance: currentBal + amount });
+                    
+                    // Order statusunu tamama çevir
+                    db.ref('escrow_orders/' + orderId).update({ status: 'completed' });
+                    showAlert("Ödəniş satıcıya uğurla köçürüldü!");
+                });
+            }
+        }
+
+        // MALİYYƏ VƏ DEPOZİT SİSTEMİ
+        function openFinanceModal() {
+            document.getElementById('financeModal').style.display = 'flex';
+        }
+
+        function switchFinanceTab(tab) {
+            if (tab === 'deposit') {
+                document.getElementById('depositTabBtn').classList.add('active');
+                document.getElementById('withdrawTabBtn').classList.remove('active');
+                document.getElementById('depositSection').classList.remove('hidden');
+                document.getElementById('paymentDetailsSection').classList.add('hidden');
+                document.getElementById('withdrawSection').classList.add('hidden');
+            } else {
+                document.getElementById('withdrawTabBtn').classList.add('active');
+                document.getElementById('depositTabBtn').classList.remove('active');
+                document.getElementById('withdrawSection').classList.remove('hidden');
+                document.getElementById('depositSection').classList.add('hidden');
+                document.getElementById('paymentDetailsSection').classList.add('hidden');
+            }
+        }
+
+        function proceedToPayment() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            if (amount < 1) {
+                showAlert("Minimum depozit 1 AZN-dir!");
+                return;
+            }
+
+            // Adminin təyin etdiyi kartı gətirmək
+            db.ref('settings/adminCard').once('value', snap => {
+                if (snap.exists()) {
+                    const cardData = snap.val();
+                    document.getElementById('adminCardDisplay').innerText = cardData.number || 'Təyin edilməyib';
+                    document.getElementById('adminCardNameDisplay').innerText = cardData.holder || '';
+                    
+                    document.getElementById('depositSection').classList.add('hidden');
+                    document.getElementById('paymentDetailsSection').classList.remove('hidden');
+                } else {
+                    showAlert("Hazırda aktiv ödəniş kartı yoxdur, inzibatçı ilə əlaqə saxlayın.");
+                }
+            });
+        }
+
+        function submitDepositRequest() {
+            const fileInput = document.getElementById('depositReceiptInput');
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+
+            if (fileInput.files.length === 0) {
+                showAlert("Lütfən qəbz şəklini əlavə edin!");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const receiptBase64 = e.target.result;
+                const reqRef = db.ref('deposit_requests').push();
+                
+                reqRef.set({
+                    id: reqRef.key,
+                    userPhone: currentUser.phone,
+                    userName: currentUser.fullName,
+                    amount: amount,
+                    receipt: receiptBase64,
+                    status: 'pending',
+                    createdAt: Date.now()
+                }, err => {
+                    if (!err) {
+                        showAlert("Depozit sorğunuza baxılır, tezliklə balansınıza əlavə olunacaq!");
+                        closeModal('financeModal');
+                    }
+                });
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        // ÇIXARIŞ SİSTEMİ
+        function toggleWithdrawMethodFields() {
+            const method = document.getElementById('withdrawMethod').value;
+            if (method === 'm10') {
+                document.getElementById('m10Field').classList.remove('hidden');
+                document.getElementById('bankField').classList.add('hidden');
+            } else {
+                document.getElementById('m10Field').classList.add('hidden');
+                document.getElementById('bankField').classList.remove('hidden');
+            }
+        }
+
+        function submitWithdrawRequest() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const method = document.getElementById('withdrawMethod').value;
+            let destination = '';
+
+            if (amount < 5) {
+                showAlert("Minimum çıxarış məbləği 5 AZN-dir!");
+                return;
+            }
+
+            if (currentUser.balance < amount) {
+                showAlert("Balansınızda kifayət qədər vəsait yoxdur!");
+                return;
+            }
+
+            if (method === 'm10') {
+                destination = document.getElementById('withdrawM10Phone').value.trim();
+                if (!destination) { showAlert("m10 nömrəsini yazın!"); return; }
+            } else {
+                destination = document.getElementById('withdrawCardNumber').value.trim();
+                if (destination.length < 16) { showAlert("Düzgün 16 rəqəmli kart nömrəsi yazın!"); return; }
+            }
+
+            const reqRef = db.ref('withdraw_requests').push();
+            reqRef.set({
+                id: reqRef.key,
+                userPhone: currentUser.phone,
+                userName: currentUser.fullName,
+                amount: amount,
+                method: method,
+                destination: destination,
+                status: 'pending',
+                createdAt: Date.now()
+            }, err => {
+                if (!err) {
+                    // Balansı dərhal çıxırıq
+                    db.ref('users/' + currentUser.phone).update({ balance: currentUser.balance - amount });
+                    showAlert("Çıxarış sorğunuz qəbul olundu!");
+                    closeModal('financeModal');
+                }
+            });
+        }
+
+        // DƏSTƏK SİSTEMİ
+        function openSupportModal() {
+            document.getElementById('supportModal').style.display = 'flex';
+        }
+
+        function handleSupportSubmit(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const topic = document.getElementById('supportTopic').value;
+            const msg = document.getElementById('supportMessage').value.trim();
+
+            const ref = db.ref('support_tickets').push();
+            ref.set({
+                id: ref.key,
+                userPhone: currentUser.phone,
+                userName: currentUser.fullName,
+                topic: topic,
+                message: msg,
+                reply: '',
+                status: 'open',
+                createdAt: Date.now()
+            }, err => {
+                if (!err) {
+                    showAlert("Dəstək mesajınız daxil oldu!");
+                    closeModal('supportModal');
+                    e.target.reset();
+                }
+            });
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
 </body>
 </html>
