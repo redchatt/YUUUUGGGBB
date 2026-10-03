@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameBazar - Oyun Hesabı Alqı-Satqısı</title>
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    body { background-color: #0b0b0c; color: #f3f4f6; font-family: 'Inter', sans-serif; }
+    .bg-red-main { background-color: #e50914; }
+    .bg-red-hover:hover { background-color: #b80710; }
+    .border-red-main { border-color: #e50914; }
+    .text-red-main { color: #e50914; }
+    .glass-card { background: rgba(22, 22, 26, 0.95); border: 1px solid rgba(229, 9, 20, 0.2); }
+    /* Modal / Custom Alert Alerting */
+    .custom-toast { position: fixed; bottom: 20px; right: 20px; z-index: 9999; animation: slideIn 0.3s forwards; }
+    @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body class="pb-20">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 bg-black/90 backdrop-blur border-b border-red-500/30 px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <span class="text-2xl font-black tracking-wider text-red-main uppercase"><i class="fa-solid font-bold fa-gamepad mr-1"></i>GameBazar</span>
+    </div>
+    <div id="headerUserBlock" class="flex items-center space-x-3 hidden">
+      <div class="bg-zinc-900 border border-red-500/40 rounded-full px-3 py-1 flex items-center space-x-2">
+        <i class="fa-solid fa-wallet text-red-main"></i>
+        <span id="userBalanceDisplay" class="font-bold text-sm text-green-400">0.00 AZN</span>
+      </div>
+      <div class="flex items-center space-x-1">
+        <span id="headerUsername" class="font-semibold text-sm"></span>
+        <span id="headerVerifiedBadge" class="hidden text-blue-500"><i class="fa-solid fa-circle-check"></i></span>
+      </div>
+      <button onclick="logout()" class="text-zinc-400 hover:text-white text-sm"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </header>
+
+  <!-- NOTIFICATION CONTAINER (Sayta məxsus bildiriş sistemi) -->
+  <div id="toastContainer"></div>
+
+  <!-- AUTH CONTAINER (Giriş / Qeydiyyat) -->
+  <section id="authSection" class="max-w-md mx-auto my-8 p-4">
+    <div class="glass-card rounded-2xl p-6 shadow-2xl">
+      <!-- Tabs -->
+      <div class="flex border-b border-zinc-800 mb-6">
+        <button id="loginTabBtn" onclick="switchAuthTab('login')" class="w-1/2 py-2 font-bold text-red-main border-b-2 border-red-main">Giriş</button>
+        <button id="registerTabBtn" onclick="switchAuthTab('register')" class="w-1/2 py-2 font-bold text-zinc-400">Qeydiyyat</button>
+      </div>
+
+      <!-- Giriş Formu -->
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">İstifadəçi Adı və ya Nömrə</label>
+          <input type="text" id="loginIdentifier" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="İstifadəçi adı və ya 0501234567">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şifrə</label>
+          <div class="relative">
+            <input type="password" id="loginPassword" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10" placeholder="******">
+            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute right-3 top-3 text-zinc-400">
+              <i id="loginEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg shadow-lg">Daxil Ol</button>
+      </form>
+
+      <!-- Qeydiyyat Formu -->
+      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Ad və Soyad</label>
+          <input type="text" id="regFullName" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="Əli Əliyev">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">İstifadəçi Adı</label>
+          <input type="text" id="regUsername" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="ali_gamer">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mobil Nömrə</label>
+          <div class="flex space-x-2">
+            <select id="regPrefix" class="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-red-main">
+              <option value="050">050</option>
+              <option value="051">051</option>
+              <option value="055">055</option>
+              <option value="070">070</option>
+              <option value="077">077</option>
+              <option value="010">010</option>
+              <option value="099">099</option>
+            </select>
+            <input type="text" id="regPhone" maxlength="7" required oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white" placeholder="1234567">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şifrə</label>
+          <div class="relative">
+            <input type="password" id="regPassword" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-main text-white pr-10" placeholder="******">
+            <button type="button" onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')" class="absolute right-3 top-3 text-zinc-400">
+              <i id="regEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg shadow-lg">Qeydiyyatdan Keç</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- MAIN APP CONTENT -->
+  <main id="appContent" class="max-w-4xl mx-auto px-4 py-4 hidden">
+    <!-- Category Filter Bar -->
+    <div class="flex space-x-2 overflow-x-auto pb-4 scrollbar-none mb-4">
+      <button onclick="filterGame('ALL')" class="bg-red-main text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Bütün Oyunlar</button>
+      <button onclick="filterGame('PUBG Mobile')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">PUBG Mobile</button>
+      <button onclick="filterGame('PES Mobile')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">PES Mobile</button>
+      <button onclick="filterGame('Clash of Clans')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">Clash of Clans</button>
+      <button onclick="filterGame('Hay Day')" class="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap hover:border-red-main">Hay Day</button>
+    </div>
+
+    <!-- ELANLAR SIYAHISI -->
+    <div id="listingsSection">
+      <h2 class="text-lg font-bold mb-3 border-l-4 border-red-main pl-2">Aktiv Elanlar</h2>
+      <div id="listingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- JS ilə dolacaq -->
+      </div>
+    </div>
+
+    <!-- ELAN YERLƏŞDİRMƏ BÖLMƏSİ -->
+    <div id="newListingSection" class="hidden glass-card p-6 rounded-2xl">
+      <h2 class="text-xl font-bold mb-4 text-red-main border-b border-zinc-800 pb-2">Yeni Oyun Elanı Yarat</h2>
+      <form onsubmit="handleCreateListing(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Oyun Seçin</label>
+          <select id="listingGame" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+            <option value="PUBG Mobile">PUBG Mobile</option>
+            <option value="PES Mobile">PES Mobile (eFootball)</option>
+            <option value="Clash of Clans">Clash of Clans</option>
+            <option value="Hay Day">Hay Day</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Başlıq</label>
+          <input type="text" id="listingTitle" placeholder="Məs: 75 Level VIP Hesab M416 Buz Diyarı" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Qiymət (AZN)</label>
+          <input type="number" id="listingPrice" placeholder="50" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Şəkil URL (Əsas görünüş üçün)</label>
+          <input type="url" id="listingImage" placeholder="https://..." required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Hesab Haqqında Ətraflı Məlumat</label>
+          <textarea id="listingDesc" rows="4" placeholder="Hesabdakı nadir əşyalar, bağlama üsulları və s..." required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg">Elanı Admin Təsdiqinə Göndər</button>
+      </form>
+    </div>
+
+    <!-- DƏSTƏK VƏ ŞİKAYƏT BÖLMƏSİ -->
+    <div id="supportSection" class="hidden glass-card p-6 rounded-2xl space-y-6">
+      <h2 class="text-xl font-bold text-red-main border-b border-zinc-800 pb-2">Dəstək & Əlaqə Mərkəzi</h2>
+      
+      <form onsubmit="handleSupportSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Müraciət Mövzusu</label>
+          <select id="supportTopic" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white">
+            <option value="Satıcı Haqqında Şikayət">Satıcı haqqında şikayət</option>
+            <option value="Depozit / Çıxarış Sorğusu">Depozit / Çıxarış sorğusu</option>
+            <option value="Hesab Kilidlənməsi">Hesab kilidlənməsi / Texniki Xəta</option>
+            <option value="Təklif və Digər">Digər məsələlər</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1">Mesajınız / Ətraflı Şikayətiniz</label>
+          <textarea id="supportMessage" rows="4" required placeholder="Problemi aydın şəkildə qeyd edin..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-red-main bg-red-hover text-white font-bold py-3 rounded-lg">Sorğunu Adminlərə Göndər</button>
+      </form>
+
+      <!-- Göndərilmiş Dəstək Cavabları -->
+      <div class="mt-8 border-t border-zinc-800 pt-4">
+        <h3 class="text-sm font-bold mb-3 text-zinc-300">Sizin Sorğularınız və Admin Cavabları</h3>
+        <div id="userSupportTickets" class="space-y-3 text-xs">
+          <!-- JS ilə yüklənəcək -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TƏHLÜKƏSİZLİK VƏ FIRILDAQÇILIQ XƏBƏRDARLIĞI -->
+    <div id="securitySection" class="hidden glass-card p-6 rounded-2xl space-y-4">
+      <div class="flex items-center space-x-3 text-red-main">
+        <i class="fa-solid fa-shield-halved text-3xl"></i>
+        <h2 class="text-xl font-bold">GameBazar Təhlükəsizlik və Zəmanət Qaydaları</h2>
+      </div>
+      <div class="space-y-3 text-xs text-zinc-300 leading-relaxed">
+        <p class="bg-red-950/40 border border-red-500/30 p-3 rounded-lg text-red-200">
+          <strong>DİQQƏT:</strong> GameBazar rəsmi vasitəçiliyi olmadan heç bir şəxsə qabaqcadan ödəniş etməyin! Fırıldaqçılıq hallarına qarşı aşağıdakı qaydalara riayət etməyiniz mütləqdir.
+        </p>
+        <h3 class="font-bold text-sm text-white">Təhlükəsiz Ticarət Qaydaları:</h3>
+        <ul class="list-disc pl-5 space-y-2">
+          <li><strong>Yoxlayaraq Alın:</strong> Hesab alarkən əvvəlcə daxil olub bağlamaların (Google, Facebook, Twitter) tam sizə təhvil verildiyindən əmin olun.</li>
+          <li><strong>Depozit Vasitəçiliyi:</strong> Ödənişləri GameBazar daxili balans depoziti vasitəsilə həyata keçirin. Pulu yalnız hesabı tam təhvil aldıqdan sonra təsdiqləyin.</li>
+          <li><strong>Mavi Tik İkonu:</strong> Təsdiqlənmiş (Mavi Tikli <i class="fa-solid fa-circle-check text-blue-500"></i>) satıcılara üstünlük verin. Onların şəxsiyyəti GameBazar tərəfindən doğrulanıb.</li>
+          <li><strong>Şübhəli Hallar:</strong> Sizdən Telegram/WhatsApp üzərindən əlavə komissiya və ya şübhəli keçidlərə daxil olmağı tələb edənləri dərhal Dəstək bölməsindən şikayət edin.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- NAVIGATION BAR (TELEGRAM STYLE) -->
+  <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-black/95 border-t border-zinc-800 flex justify-around py-2 z-50 hidden">
+    <button onclick="showTab('listings')" class="flex flex-col items-center text-red-main text-xs font-semibold">
+      <i class="fa-solid fa-store text-lg"></i>
+      <span>Elanlar</span>
+    </button>
+    <button onclick="showTab('newListing')" class="flex flex-col items-center text-zinc-400 hover:text-white text-xs font-semibold">
+      <i class="fa-solid fa-circle-plus text-lg"></i>
+      <span>Elan Ver</span>
+    </button>
+    <button onclick="showTab('support')" class="flex flex-col items-center text-zinc-400 hover:text-white text-xs font-semibold">
+      <i class="fa-solid fa-headset text-lg"></i>
+      <span>Dəstək</span>
+    </button>
+    <button onclick="showTab('security')" class="flex flex-col items-center text-zinc-400 hover:text-white text-xs font-semibold">
+      <i class="fa-solid fa-shield-cat text-lg"></i>
+      <span>Təhlükəsizlik</span>
+    </button>
+  </nav>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const firebaseConfig = {
+      databaseURL: "https://gamebazar-8fc97-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentUser = null;
+
+    // Toast Notification System
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `custom-toast px-4 py-3 rounded-xl shadow-2xl text-xs font-bold text-white flex items-center space-x-2 ${
+        type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-zinc-800 border border-red-500'
+      }`;
+      toast.innerHTML = `<i class="fa-solid fa-bell"></i> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    function togglePasswordVisibility(inputId, eyeId) {
+      const input = document.getElementById(inputId);
+      const eye = document.getElementById(eyeId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        eye.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    function switchAuthTab(tab) {
+      if (tab === 'login') {
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('registerForm').classList.add('hidden');
+        document.getElementById('loginTabBtn').className = "w-1/2 py-2 font-bold text-red-main border-b-2 border-red-main";
+        document.getElementById('registerTabBtn').className = "w-1/2 py-2 font-bold text-zinc-400";
+      } else {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('registerForm').classList.remove('hidden');
+        document.getElementById('registerTabBtn').className = "w-1/2 py-2 font-bold text-red-main border-b-2 border-red-main";
+        document.getElementById('loginTabBtn').className = "w-1/2 py-2 font-bold text-zinc-400";
+      }
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const fullName = document.getElementById('regFullName').value.trim();
+      const username = document.getElementById('regUsername').value.trim().toLowerCase();
+      const prefix = document.getElementById('regPrefix').value;
+      const phoneRest = document.getElementById('regPhone').value.trim();
+      const password = document.getElementById('regPassword').value;
+
+      if (phoneRest.length !== 7) {
+        showToast("Mobil nömrə tam olaraq 7 rəqəm olmalıdır!", "error");
+        return;
+      }
+
+      const fullPhone = prefix + phoneRest;
+
+      db.ref('users/' + username).once('value', snapshot => {
+        if (snapshot.exists()) {
+          showToast("Bu istifadəçi adı artıq götürülüb!", "error");
+        } else {
+          const userData = {
+            fullName,
+            username,
+            phone: fullPhone,
+            password,
+            balance: 0.00,
+            isVerified: false,
+            createdAt: Date.now()
+          };
+          db.ref('users/' + username).set(userData, err => {
+            if (!err) {
+              showToast("Qeydiyyat uğurla tamamlandı! Giriş edin.", "success");
+              switchAuthTab('login');
+            } else {
+              showToast("Xəta baş verdi: " + err.message, "error");
+            }
+          });
+        }
+      });
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const identifier = document.getElementById('loginIdentifier').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+
+      db.ref('users').once('value', snapshot => {
+        const users = snapshot.val();
+        let foundUser = null;
+
+        if (users) {
+          Object.keys(users).forEach(key => {
+            const u = users[key];
+            if (u.username === identifier || u.phone === identifier) {
+              if (u.password === password) {
+                foundUser = u;
+              }
+            }
+          });
+        }
+
+        if (foundUser) {
+          currentUser = foundUser;
+          localStorage.setItem('gb_user', JSON.stringify(foundUser));
+          initApp();
+          showToast("Xoş gəldiniz, " + currentUser.fullName, "success");
+        } else {
+          showToast("İstifadəçi adı/nömrə və ya şifrə yanlışdır!", "error");
+        }
+      });
+    }
+
+    function initApp() {
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById('appContent').classList.remove('hidden');
+      document.getElementById('bottomNav').classList.remove('hidden');
+      document.getElementById('headerUserBlock').classList.remove('hidden');
+
+      document.getElementById('headerUsername').innerText = currentUser.username;
+      document.getElementById('userBalanceDisplay').innerText = (currentUser.balance || 0).toFixed(2) + " AZN";
+      if (currentUser.isVerified) {
+        document.getElementById('headerVerifiedBadge').classList.remove('hidden');
+      }
+
+      loadListings();
+      loadUserTickets();
+    }
+
+    function logout() {
+      localStorage.removeItem('gb_user');
+      location.reload();
+    }
+
+    function showTab(tabName) {
+      document.getElementById('listingsSection').classList.add('hidden');
+      document.getElementById('newListingSection').classList.add('hidden');
+      document.getElementById('supportSection').classList.add('hidden');
+      document.getElementById('securitySection').classList.add('hidden');
+
+      if (tabName === 'listings') document.getElementById('listingsSection').classList.remove('hidden');
+      if (tabName === 'newListing') document.getElementById('newListingSection').classList.remove('hidden');
+      if (tabName === 'support') document.getElementById('supportSection').classList.remove('hidden');
+      if (tabName === 'security') document.getElementById('securitySection').classList.remove('hidden');
+    }
+
+    function handleCreateListing(e) {
+      e.preventDefault();
+      const newListing = {
+        game: document.getElementById('listingGame').value,
+        title: document.getElementById('listingTitle').value.trim(),
+        price: parseFloat(document.getElementById('listingPrice').value),
+        image: document.getElementById('listingImage').value.trim(),
+        desc: document.getElementById('listingDesc').value.trim(),
+        seller: currentUser.username,
+        sellerPhone: currentUser.phone,
+        status: 'PENDING',
+        createdAt: Date.now()
+      };
+
+      db.ref('listings').push(newListing, err => {
+        if (!err) {
+          showToast("Elan göndərildi! Admin təsdiqindən sonra dərc olunacaq.", "success");
+          e.target.reset();
+          showTab('listings');
+        }
+      });
+    }
+
+    function loadListings(gameFilter = 'ALL') {
+      const grid = document.getElementById('listingsGrid');
+      grid.innerHTML = '<p class="text-xs text-zinc-500">Elanlar yüklənir...</p>';
+
+      db.ref('listings').on('value', snapshot => {
+        grid.innerHTML = '';
+        const data = snapshot.val();
+        if (!data) {
+          grid.innerHTML = '<p class="text-xs text-zinc-500">Hələ ki, heç bir təsdiqlənmiş elan yoxdur.</p>';
+          return;
+        }
+
+        Object.keys(data).forEach(key => {
+          const item = data[key];
+          if (item.status === 'APPROVED') {
+            if (gameFilter === 'ALL' || item.game === gameFilter) {
+              const card = document.createElement('div');
+              card.className = "glass-card rounded-xl overflow-hidden flex flex-col justify-between border border-zinc-800 hover:border-red-main transition";
+              card.innerHTML = `
+                <img src="${item.image}" class="w-full h-40 object-cover" alt="Game">
+                <div class="p-3 space-y-2">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="bg-red-950 text-red-400 border border-red-800/50 px-2 py-0.5 rounded font-bold">${item.game}</span>
+                    <span class="text-green-400 font-extrabold text-sm">${item.price} AZN</span>
+                  </div>
+                  <h3 class="font-bold text-sm text-white line-clamp-1">${item.title}</h3>
+                  <p class="text-xs text-zinc-400 line-clamp-2">${item.desc}</p>
+                  <div class="flex justify-between items-center pt-2 border-t border-zinc-800 text-xs">
+                    <span class="text-zinc-500"><i class="fa-solid fa-user text-zinc-400"></i> ${item.seller}</span>
+                    <a href="https://wa.me/994${item.sellerPhone.substring(1)}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-bold"><i class="fa-brands fa-whatsapp"></i> Əlaqə</a>
+                  </div>
+                </div>
+              `;
+              grid.appendChild(card);
+            }
+          }
+        });
+      });
+    }
+
+    function filterGame(game) {
+      loadListings(game);
+    }
+
+    function handleSupportSubmit(e) {
+      e.preventDefault();
+      const topic = document.getElementById('supportTopic').value;
+      const message = document.getElementById('supportMessage').value.trim();
+
+      const ticket = {
+        username: currentUser.username,
+        topic,
+        message,
+        reply: '',
+        status: 'OPEN',
+        createdAt: Date.now()
+      };
+
+      db.ref('support_tickets').push(ticket, err => {
+        if (!err) {
+          showToast("Dəstək sorğunuz adminlərə çatdırıldı.", "success");
+          e.target.reset();
+          loadUserTickets();
+        }
+      });
+    }
+
+    function loadUserTickets() {
+      const container = document.getElementById('userSupportTickets');
+      db.ref('support_tickets').on('value', snapshot => {
+        container.innerHTML = '';
+        const data = snapshot.val();
+        if (!data) return;
+
+        Object.keys(data).forEach(key => {
+          const t = data[key];
+          if (t.username === currentUser.username) {
+            const div = document.createElement('div');
+            div.className = "bg-zinc-900 border border-zinc-800 p-3 rounded-lg";
+            div.innerHTML = `
+              <div class="flex justify-between text-zinc-400 mb-1">
+                <span class="font-bold text-red-main">${t.topic}</span>
+                <span>${t.status === 'OPEN' ? 'Gözləmədə' : 'Cavablandı'}</span>
+              </div>
+              <p class="text-zinc-300">${t.message}</p>
+              ${t.reply ? `<div class="mt-2 bg-zinc-950 p-2 rounded border border-red-500/30 text-green-400"><strong>Admin Cavabı:</strong> ${t.reply}</div>` : ''}
+            `;
+            container.appendChild(div);
+          }
+        });
+      });
+    }
+
+    // Auto-login Check
+    window.onload = () => {
+      const savedUser = localStorage.getItem('gb_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        initApp();
+      }
+    };
+  </script>
+</body>
+</html>
