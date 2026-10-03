@@ -3,427 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GameBazar - Admin Paneli</title>
+    <title>GameBazar - Admin Panel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         :root {
-            --bg-color: #08080a;
-            --card-bg: #121218;
-            --border: #222230;
-            --primary: #ff003c;
-            --text: #ffffff;
-            --text-sub: #7d7d91;
-            --success: #00e676;
+            --bg-color: #080808;
+            --primary-red: #e50914;
+            --card-bg: #141414;
+            --border-color: #222;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: var(--bg-color); color: var(--text); padding: 20px; }
-
-        .login-box {
-            max-width: 400px;
-            margin: 100px auto;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 25px;
-            border-radius: 12px;
-        }
-
-        .input-field {
-            width: 100%;
-            background: #1a1a24;
-            border: 1px solid var(--border);
-            padding: 12px;
-            color: #fff;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            outline: none;
-        }
-
-        .btn-admin {
-            width: 100%;
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .admin-dashboard { display: none; max-width: 1100px; margin: 0 auto; }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .stat-card h4 { font-size: 12px; color: var(--text-sub); }
-        .stat-card .num { font-size: 22px; font-weight: bold; color: var(--primary); margin-top: 5px; }
-
-        .section-box {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-        }
-
-        .section-title { font-size: 16px; color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-        th, td { padding: 10px; border-bottom: 1px solid var(--border); }
-        th { color: var(--text-sub); }
-
-        .action-btn {
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: none;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-right: 4px;
-        }
-
-        .btn-approve { background: var(--success); color: #000; }
-        .btn-reject { background: var(--primary); color: #fff; }
-
-        .hidden { display: none; }
+        body { background: var(--bg-color); color: #fff; padding: 20px; display: flex; justify-content: center; }
+        .admin-box { width: 100%; max-width: 600px; }
+        h2 { color: var(--primary-red); text-align: center; margin-bottom: 20px; }
+        .section { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .section h3 { color: var(--primary-red); font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group input { width: 100%; padding: 10px; background: #222; border: 1px solid #333; color: #fff; border-radius: 6px; outline: none; }
+        .btn { width: 100%; padding: 10px; background: var(--primary-red); color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <!-- ADMİN LOGİN -->
-    <div id="adminLoginBox" class="login-box">
-        <h3 style="color:var(--primary); margin-bottom:20px; text-align:center;">Admin Paneli Giriş</h3>
-        <input type="text" id="adminUser" class="input-field" placeholder="İstifadəçi Adı">
-        <input type="password" id="adminPass" class="input-field" placeholder="Şifrə">
-        <button class="btn-admin" onclick="verifyAdmin()">Daxil Ol</button>
+<div class="admin-box">
+    <!-- Admin Login -->
+    <div id="adminAuth" class="section">
+        <h2>GAMEBAZAR ADMİN GİRİŞİ</h2>
+        <form onsubmit="adminLogin(event)">
+            <div class="input-group"><input type="text" id="admUser" placeholder="Login" required></div>
+            <div class="input-group"><input type="password" id="admPass" placeholder="Şifrə" required></div>
+            <button type="submit" class="btn">Daxil Ol</button>
+        </form>
     </div>
 
-    <!-- ADMİN PANEL ƏSAS -->
-    <div id="adminDashboard" class="admin-dashboard">
-        <h2 style="margin-bottom:20px; color:var(--primary); display:flex; justify-content:space-between;">
-            GameBazar İdarəetmə Mərkəzi
-            <button onclick="location.reload()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:14px;"><i class="fa-solid fa-power-off"></i> Çıxış</button>
-        </h2>
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" style="display: none;">
+        <h2>GAMEBAZAR İDARƏETMƏ PANELİ</h2>
 
-        <!-- STATİSTİKA -->
-        <div class="stat-grid">
-            <div class="stat-card">
-                <h4>Ümumi İstifadəçilər</h4>
-                <div id="statUsers" class="num">0</div>
-            </div>
-            <div class="stat-card">
-                <h4>Gözləyən Elanlar</h4>
-                <div id="statPendingAds" class="num">0</div>
-            </div>
-            <div class="stat-card">
-                <h4>Gözləyən Depozitlər</h4>
-                <div id="statPendingDep" class="num">0</div>
-            </div>
-            <div class="stat-card">
-                <h4>Gözləyən Çıxarışlar</h4>
-                <div id="statPendingWit" class="num">0</div>
-            </div>
+        <!-- Depozit Kartı Əlavə Etmə -->
+        <div class="section">
+            <h3><i class="fa-solid fa-credit-card"></i> Depozit Kartı Əlavə Et</h3>
+            <form onsubmit="addAdminCard(event)">
+                <div class="input-group"><input type="text" id="bankName" placeholder="Bank / Sistem (məs: Kapital Bank)" required></div>
+                <div class="input-group"><input type="text" id="cardNumber" placeholder="Kart Nömrəsi" required></div>
+                <div class="input-group"><input type="text" id="cardHolder" placeholder="Ad Soyad (Kart Sahibi)" required></div>
+                <button type="submit" class="btn">Kartı Yadda Saxla</button>
+            </form>
+            <div id="cardsList" style="margin-top: 15px;"></div>
         </div>
 
-        <!-- ÖDƏNİŞ KARTI TƏYİN ETMƏK -->
-        <div class="section-box">
-            <div class="section-title">Depozit Üçün Admin Kart Məlumatı</div>
-            <div style="display:flex; gap:10px; max-width:600px;">
-                <input type="text" id="setCardNum" class="input-field" placeholder="Kart Nömrəsi (məs: 4127....)">
-                <input type="text" id="setCardHolder" class="input-field" placeholder="Ad Soyad">
-                <button class="btn-admin" style="width:180px; height:42px;" onclick="saveAdminCard()">Yenilə</button>
-            </div>
+        <!-- Elan Təsdiqi -->
+        <div class="section">
+            <h3><i class="fa-solid fa-list-check"></i> Təsdiq Gözləyən Elanlar</h3>
+            <div id="pendingAds"></div>
         </div>
 
-        <!-- GÖZLƏYƏN ELANLAR -->
-        <div class="section-box">
-            <div class="section-title">Gözləyən Elan Təsdiqləri</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Şəkil</th>
-                        <th>Başlıq</th>
-                        <th>Oyun</th>
-                        <th>Qiymət</th>
-                        <th>Satıcı</th>
-                        <th>Əməliyyat</th>
-                    </tr>
-                </thead>
-                <tbody id="adminAdsTable"></tbody>
-            </table>
+        <!-- Depozit Sorğuları -->
+        <div class="section">
+            <h3><i class="fa-solid fa-money-bill-transfer"></i> Depozit Sorğuları</h3>
+            <div id="depositReqs"></div>
         </div>
 
-        <!-- İSTİFADƏÇİ TƏSDİQLƏMƏ VƏ MAVİ TİK (VERIFIED) -->
-        <div class="section-box">
-            <div class="section-title">İstifadəçilərə Mavi Tik (Verified) Vermək</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Ad Soyad</th>
-                        <th>Nömrə</th>
-                        <th>İstifadəçi Adı</th>
-                        <th>Balans</th>
-                        <th>Status</th>
-                        <th>Əməliyyat</th>
-                    </tr>
-                </thead>
-                <tbody id="adminUsersTable"></tbody>
-            </table>
+        <!-- İstifadəçilər & Mavi TİK -->
+        <div class="section">
+            <h3><i class="fa-solid fa-users"></i> İstifadəçilər & Mavi TİK</h3>
+            <div id="usersList"></div>
         </div>
 
-        <!-- DEPOZİT SORĞULARI -->
-        <div class="section-box">
-            <div class="section-title">Depozit Sorğuları (Ödəniş Qəbzləri)</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>İstifadəçi</th>
-                        <th>Məbləğ</th>
-                        <th>Qəbz Şəkli</th>
-                        <th>Əməliyyat</th>
-                    </tr>
-                </thead>
-                <tbody id="adminDepTable"></tbody>
-            </table>
-        </div>
-
-        <!-- ÇIXARIŞ SORĞULARI -->
-        <div class="section-box">
-            <div class="section-title">Çıxarış Sorğuları</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>İstifadəçi</th>
-                        <th>Üsul</th>
-                        <th>Rekvizit</th>
-                        <th>Məbləğ</th>
-                        <th>Əməliyyat</th>
-                    </tr>
-                </thead>
-                <tbody id="adminWitTable"></tbody>
-            </table>
-        </div>
-
-        <!-- DƏSTƏK MESAJLARI -->
-        <div class="section-box">
-            <div class="section-title">Dəstək Sorğuları</div>
-            <div id="adminSupportList"></div>
+        <!-- Şifrə Bərpa Sorğuları -->
+        <div class="section">
+            <h3><i class="fa-solid fa-key"></i> Şifrə Bərpa Sorğuları</h3>
+            <div id="passResets"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        const firebaseConfig = {
-            databaseURL: "https://gamebazar-8fc97-default-rtdb.asia-southeast1.firebasedatabase.app/"
+<script>
+    const firebaseConfig = {
+        databaseURL: "https://gamebazar-8fc97-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function adminLogin(e) {
+        e.preventDefault();
+        const u = document.getElementById('admUser').value.trim();
+        const p = document.getElementById('admPass').value.trim();
+
+        if (u === "GGHH321_QİJJ" && p === "AA33390_SBFVJH") {
+            document.getElementById('adminAuth').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+            loadDashboardData();
+        } else {
+            alert("Giriş məlumatları yanlışdır!");
+        }
+    }
+
+    function addAdminCard(e) {
+        e.preventDefault();
+        const card = {
+            id: Date.now(),
+            bank: document.getElementById('bankName').value,
+            number: document.getElementById('cardNumber').value,
+            holder: document.getElementById('cardHolder').value
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        db.ref('admin_cards/' + card.id).set(card, () => {
+            alert("Kart Uğurla Əlavə Olundu!");
+            document.getElementById('bankName').value = '';
+            document.getElementById('cardNumber').value = '';
+            document.getElementById('cardHolder').value = '';
+        });
+    }
 
-        function verifyAdmin() {
-            const u = document.getElementById('adminUser').value;
-            const p = document.getElementById('adminPass').value;
+    function loadDashboardData() {
+        // Admin Cards List
+        db.ref('admin_cards').on('value', snap => {
+            const container = document.getElementById('cardsList');
+            container.innerHTML = '';
+            snap.forEach(c => {
+                const item = c.val();
+                container.innerHTML += `
+                    <div class="item">
+                        <div><b>${item.bank}</b> - ${item.number} (${item.holder})</div>
+                        <button onclick="deleteCard(${item.id})" style="background:red; color:#fff; border:none; padding:4px 8px; border-radius:4px;">Sil</button>
+                    </div>
+                `;
+            });
+        });
 
-            if (u === "GGHH321_QİJJ" && p === "AA33390_SBFVJH") {
-                document.getElementById('adminLoginBox').classList.add('hidden');
-                document.getElementById('adminDashboard').style.display = 'block';
-                loadAdminData();
-            } else {
-                alert("Giriş məlumatları yanlışdır!");
-            }
-        }
-
-        function loadAdminData() {
-            // KART MƏLUMATLARINI GƏTİR
-            db.ref('settings/adminCard').once('value', snap => {
-                if(snap.exists()){
-                    document.getElementById('setCardNum').value = snap.val().number || '';
-                    document.getElementById('setCardHolder').value = snap.val().holder || '';
+        // Pending Ads
+        db.ref('ads').on('value', snap => {
+            const container = document.getElementById('pendingAds');
+            container.innerHTML = '';
+            snap.forEach(c => {
+                const ad = c.val();
+                if (ad.status === 'PENDING') {
+                    container.innerHTML += `
+                        <div class="item">
+                            <div><b>${ad.title}</b> (${ad.price} AZN) - @${ad.sellerUser}</div>
+                            <button onclick="approveAd(${ad.id})" style="background:green; color:#fff; border:none; padding:4px 8px; border-radius:4px;">Təsdiqlə</button>
+                        </div>
+                    `;
                 }
             });
+        });
 
-            // İSTİFADƏÇİLƏR VƏ STATİSTİKA
-            db.ref('users').on('value', snap => {
-                const table = document.getElementById('adminUsersTable');
-                table.innerHTML = '';
-                let count = 0;
-
-                if(snap.exists()){
-                    const users = snap.val();
-                    for(let k in users){
-                        count++;
-                        const u = users[k];
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${u.fullName}</td>
-                            <td>${u.phone}</td>
-                            <td>@${u.username}</td>
-                            <td>${u.balance} AZN</td>
-                            <td>${u.isVerified ? '<span style="color:#00b0ff;">Mavi Tik-li</span>' : 'Adət'}</td>
-                            <td>
-                                <button class="action-btn btn-approve" onclick="toggleUserVerify('${u.phone}', ${!u.isVerified})">
-                                    ${u.isVerified ? 'Mavi Tiki Ləğv Et' : 'Mavi Tik Ver'}
-                                </button>
-                            </td>
-                        `;
-                        table.appendChild(tr);
-                    }
-                }
-                document.getElementById('statUsers').innerText = count;
+        // Users & Verified status
+        db.ref('users').on('value', snap => {
+            const container = document.getElementById('usersList');
+            container.innerHTML = '';
+            snap.forEach(c => {
+                const u = c.val();
+                container.innerHTML += `
+                    <div class="item">
+                        <div>@${u.username} (${u.phone}) - Balans: ${u.balance} AZN</div>
+                        <button onclick="toggleVerify('${u.username}', ${!u.isVerified})" style="background:var(--primary-red); color:#fff; border:none; padding:4px 8px; border-radius:4px;">
+                            ${u.isVerified ? 'Mavi Tik Sil' : 'Mavi Tik Ver'}
+                        </button>
+                    </div>
+                `;
             });
+        });
 
-            // GÖZLƏYƏN ELANLAR
-            db.ref('ads').on('value', snap => {
-                const table = document.getElementById('adminAdsTable');
-                table.innerHTML = '';
-                let pendingCount = 0;
-
-                if(snap.exists()){
-                    const ads = snap.val();
-                    for(let k in ads){
-                        const ad = ads[k];
-                        if(ad.status === 'pending'){
-                            pendingCount++;
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td><img src="${ad.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"></td>
-                                <td>${ad.title}</td>
-                                <td>${ad.game.toUpperCase()}</td>
-                                <td>${ad.price} AZN</td>
-                                <td>${ad.sellerPhone}</td>
-                                <td>
-                                    <button class="action-btn btn-approve" onclick="approveAd('${ad.id}')">Təsdiqlə</button>
-                                    <button class="action-btn btn-reject" onclick="rejectAd('${ad.id}')">Rədd Et</button>
-                                </td>
-                            `;
-                            table.appendChild(tr);
-                        }
-                    }
-                }
-                document.getElementById('statPendingAds').innerText = pendingCount;
+        // Pass Resets
+        db.ref('pass_resets').on('value', snap => {
+            const container = document.getElementById('passResets');
+            container.innerHTML = '';
+            snap.forEach(c => {
+                const req = c.val();
+                container.innerHTML += `<div class="item">Sorğu: ${req.userOrPhone} (${req.date})</div>`;
             });
+        });
+    }
 
-            // DEPOZİT SORĞULARI
-            db.ref('deposit_requests').on('value', snap => {
-                const table = document.getElementById('adminDepTable');
-                table.innerHTML = '';
-                let pendingDep = 0;
+    function deleteCard(id) {
+        db.ref('admin_cards/' + id).remove();
+    }
 
-                if(snap.exists()){
-                    const reqs = snap.val();
-                    for(let k in reqs){
-                        const r = reqs[k];
-                        if(r.status === 'pending'){
-                            pendingDep++;
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${r.userName} (${r.userPhone})</td>
-                                <td><b>${r.amount} AZN</b></td>
-                                <td><a href="${r.receipt}" target="_blank" style="color:var(--primary);">Bax (Şəkil)</a></td>
-                                <td>
-                                    <button class="action-btn btn-approve" onclick="approveDeposit('${r.id}', '${r.userPhone}', ${r.amount})">Təsdiqlə (Balans Artır)</button>
-                                    <button class="action-btn btn-reject" onclick="rejectDeposit('${r.id}')">Rədd Et</button>
-                                </td>
-                            `;
-                            table.appendChild(tr);
-                        }
-                    }
-                }
-                document.getElementById('statPendingDep').innerText = pendingDep;
-            });
+    function approveAd(id) {
+        db.ref('ads/' + id).update({ status: 'APPROVED' });
+    }
 
-            // ÇIXARIŞ SORĞULARI
-            db.ref('withdraw_requests').on('value', snap => {
-                const table = document.getElementById('adminWitTable');
-                table.innerHTML = '';
-                let pendingWit = 0;
-
-                if(snap.exists()){
-                    const reqs = snap.val();
-                    for(let k in reqs){
-                        const r = reqs[k];
-                        if(r.status === 'pending'){
-                            pendingWit++;
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${r.userName} (${r.userPhone})</td>
-                                <td>${r.method.toUpperCase()}</td>
-                                <td><b>${r.destination}</b></td>
-                                <td><b>${r.amount} AZN</b></td>
-                                <td>
-                                    <button class="action-btn btn-approve" onclick="approveWithdraw('${r.id}')">Ödənildi</button>
-                                    <button class="action-btn btn-reject" onclick="rejectWithdraw('${r.id}', '${r.userPhone}', ${r.amount})">Rədd Et (Balansa Qaytar)</button>
-                                </td>
-                            `;
-                            table.appendChild(tr);
-                        }
-                    }
-                }
-                document.getElementById('statPendingWit').innerText = pendingWit;
-            });
-        }
-
-        // KART Saxlamaq
-        function saveAdminCard() {
-            const num = document.getElementById('setCardNum').value.trim();
-            const holder = document.getElementById('setCardHolder').value.trim();
-
-            db.ref('settings/adminCard').set({
-                number: num,
-                holder: holder
-            }, err => {
-                if(!err) alert("Kart məlumatları yeniləndi!");
-            });
-        }
-
-        // MAVİ TİK DƏYİŞMƏK
-        function toggleUserVerify(phone, status) {
-            db.ref('users/' + phone).update({ isVerified: status });
-        }
-
-        // ELAN TƏSDİQLƏMƏK / RƏDD ETMƏK
-        function approveAd(adId) {
-            db.ref('ads/' + adId).update({ status: 'approved' });
-        }
-        function rejectAd(adId) {
-            db.ref('ads/' + adId).update({ status: 'rejected' });
-        }
-
-        // DEPOZİTİ TƏSDİQLƏMƏK
-        function approveDeposit(reqId, userPhone, amount) {
-            db.ref('users/' + userPhone + '/balance').once('value', snap => {
-                let currentBal = snap.val() || 0;
-                db.ref('users/' + userPhone).update({ balance: currentBal + amount });
-                db.ref('deposit_requests/' + reqId).update({ status: 'approved' });
-            });
-        }
-        function rejectDeposit(reqId) {
-            db.ref('deposit_requests/' + reqId).update({ status: 'rejected' });
-        }
-
-        // ÇIXARIŞI TƏSDİQLƏMƏK / RƏDD ETMƏK
-        function approveWithdraw(reqId) {
-            db.ref('withdraw_requests/' + reqId).update({ status: 'approved' });
-        }
-        function rejectWithdraw(reqId, userPhone, amount) {
-            // Balansı istifadəçiyə geri qaytarırıq
-            db.ref('users/' + userPhone + '/balance').once('value', snap => {
-                let currentBal = snap.val() || 0;
-                db.ref('users/' + userPhone).update({ balance: currentBal + amount });
-                db.ref('withdraw_requests/' + reqId).update({ status: 'rejected' });
-            });
-        }
-    </script>
+    function toggleVerify(username, status) {
+        db.ref('users/' + username).update({ isVerified: status });
+    }
+</script>
 </body>
 </html>
